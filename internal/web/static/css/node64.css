@@ -522,7 +522,7 @@ th a:hover { text-decoration: underline; }
 .hc-tip .hc-tip-maintenance { color: #f0ad4e; }
 .hc-tip .hc-tip-dependent { color: #9aa3ad; }
 .nav-img { height: 16px; width: auto; vertical-align: -2px; margin-right: 2px; }
-.hc-empty-img { max-width: 520px; }
+.hc-empty-img { max-width: min(520px, 100%); }
 
 /* Schriftgroesse (Einstellungen > Darstellung): alles ist rem-basiert und skaliert mit */
 html[data-fs="sm"] { font-size: 87.5%; }
