@@ -51,7 +51,8 @@ type NavItem struct {
 	Enabled   bool
 	Sub       bool // Unterpunkt (eingerueckt)
 	Active    bool
-	Hidden    bool // Modul in den Einstellungen ausgeschaltet: nicht im Menue
+	Hidden    bool   // Modul in den Einstellungen ausgeschaltet: nicht im Menue
+	Head      string // Ueberschrift der Gruppe vor diesem Punkt (Textschluessel), leer = keine
 }
 
 // Crumb ist ein Element der Brotkrumen in der Kopfzeile (URL leer = aktuelle Seite).
@@ -287,7 +288,7 @@ func (s *Server) view(r *http.Request, titleKey string) *View {
 }
 
 func (s *Server) nav(r *http.Request) []NavItem {
-	items := []NavItem{{Key: "nav.dashboard", Path: "/", Icon: "bi-speedometer2", Available: true, Enabled: true}}
+	items := []NavItem{{Key: "nav.dashboard", Path: "/", Icon: "bi-speedometer2", Available: true, Enabled: true, Head: "nav.group_overview"}}
 	link := NavItem{Key: "nav.link", Path: "/link", Icon: "bi-cloud", Available: true, Enabled: true, Sub: true}
 	for _, m := range s.Modules.List(r.Context()) {
 		// in der Navigation nur Symbole (auch eingeklappt); die Logos der Module stehen auf ihren Seiten
@@ -302,6 +303,13 @@ func (s *Server) nav(r *http.Request) []NavItem {
 				NavItem{Key: "nav.dhcp", Path: "/dns64/dhcp", Icon: "bi-router", Available: true, Enabled: m.Running, Sub: true})
 		}
 	}
+	for i := 1; i < len(items); i++ { // Gruppe "Module" vor dem ersten sichtbaren Modul
+		if !items[i].Hidden {
+			items[i].Head = "nav.group_modules"
+			break
+		}
+	}
+	system := len(items) // ab hier Gruppe "System"
 	if s.Certs != nil {
 		items = append(items, NavItem{Key: "nav.certificates", Path: "/certificates", Icon: "bi-shield-lock", Available: true, Enabled: true})
 	}
@@ -320,6 +328,7 @@ func (s *Server) nav(r *http.Request) []NavItem {
 		NavItem{Key: "nav.logs", Path: "/logs", Icon: "bi-terminal", Available: true, Enabled: true},
 		NavItem{Key: "nav.api", Path: "/api/docs", Icon: "bi-code-slash", Available: true, Enabled: true},
 	)
+	items[system].Head = "nav.group_system"
 	best := -1 // nur der genaueste Treffer ist aktiv (Statusseiten unter /healthchecks/...); gleich lang: der Unterpunkt
 	for i := range items {
 		p := items[i].Path

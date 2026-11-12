@@ -4,6 +4,8 @@ Kurz, was sich je Version ändert. Einzelheiten je Modul stehen in der Node unte
 
 ## Unveröffentlicht
 
+- Oberfläche: neues Design in Hell und Dunkel – Seitenleiste über die ganze Höhe mit den Gruppen Übersicht, Module und System, Orange als Akzentfarbe, Schriften Inter und JetBrains Mono (mitgeliefert), neu gestaltete Kacheln, Plaketten, Tabellen, Knöpfe und Formulare.
+
 ## 1.5.7 – 2026-11-12
 
 - Start: Host-Ordner als `/data` ohne Rechte-Ärger (Synology, UGREEN …) – mit `user: "0:0"` übergibt Node64 den Ordner dem Benutzer 65532 und läuft danach nicht als root weiter (anderer Benutzer über `NODE64_UID`/`NODE64_GID`); ist `/data` nicht beschreibbar, nennt die Meldung Besitzer und Abhilfe.

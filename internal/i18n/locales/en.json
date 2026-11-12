@@ -66,6 +66,9 @@
     }
   },
   "nav": {
+    "group_overview": "Overview",
+    "group_modules": "Modules",
+    "group_system": "System",
     "local_dns": "Local DNS",
     "dhcp": "DHCP",
     "plan": "Account class: {name}",
