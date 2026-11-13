@@ -1,6 +1,10 @@
 package dns64
 
-import "context"
+import (
+	"context"
+
+	"github.com/ipv64net/node64/internal/dns64/dhcp"
+)
 
 // Geraete aus DNS64 fuer andere Module (GitHub #20): Healthchecks bietet sie beim Anlegen eines Checks zur Auswahl an,
 // die Seite Gruppen verlinkt je Geraet auf "neuer Check" (nur wenn Healthchecks laeuft).
@@ -32,6 +36,19 @@ func (m *Module) NetDevices(ctx context.Context) []NetDevice {
 			continue
 		}
 		out = append(out, NetDevice{Name: d.Name, IP: d.IP})
+	}
+	return out
+}
+
+// DHCPLeases liefert die Vergaben des laufenden DHCP-Servers (nil = DHCP aus), fuer IPAM64.
+func (m *Module) DHCPLeases() []dhcp.Lease {
+	s := m.dhcpSrv.Load()
+	if s == nil {
+		return nil
+	}
+	var out []dhcp.Lease
+	for _, sv := range s.Snapshot().Scopes {
+		out = append(out, sv.Leases...)
 	}
 	return out
 }

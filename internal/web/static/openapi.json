@@ -53,6 +53,10 @@
       "description": "Community-Messnetz (Modul Sonar64, standardmäßig aus): Teilnahme per Opt-in mit dem zentralen ipv64-API-Key, Rolle, Budget, Ruhezeit, Profil bei ipv64, eigene Messungen und Pings gegen die Node. Ist das Modul aus: 404."
     },
     {
+      "name": "IPAM64",
+      "description": "IP-Belegung der Netze (Modul IPAM64, standardmäßig aus): Netze, belegte Adressen aus allen Quellen, Netz-Scan. Ist das Modul aus: 404."
+    },
+    {
       "name": "Monitor64",
       "description": "Monitoring von Hosts und Diensten mit Schwellen und Verlauf (Modul Monitor64): Hosts mit Zugängen (Agent, SSH, Proxmox VE/PBS, Docker, TrueNAS, Unraid, Redfish, NUT, Prometheus, SNMP), erkannte Dienste, Schwellen mit Abweichungen je Gruppe/Tag, Probleme mit Ablauf, Benachrichtigung, Wartung, Agent-Verteilung und Cluster. Ist das Modul aus: 404. Anmeldung wie überall: Sitzung (mit `X-CSRF-Token` bei Änderungen) oder API-Key `Authorization: Bearer node64_...`. Fehler als `{\"error\": \"<code>\", \"message\": \"<Text>\"}`; Körper werden streng gelesen (unbekanntes Feld: 400 `json`). Geheimnisse der Zugänge werden nur geschrieben, nie ausgegeben (`secret_set`). Jede Änderung steht mit Akteur im Audit-Log."
     }
@@ -25634,6 +25638,291 @@
                       }
                     }
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ipam64/networks": {
+      "get": {
+        "tags": [
+          "IPAM64"
+        ],
+        "summary": "IPAM64: Netze mit Belegung",
+        "description": "DHCP-Netze aus DNS64 und eigene Netze, je mit Größe, belegten und freien Adressen und Konflikten. Nur IPv4.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "networks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "subnet": {
+                            "type": "string",
+                            "example": "192.168.1.0/24"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "vlan": {
+                            "type": "integer",
+                            "description": "0 = keins"
+                          },
+                          "interface": {
+                            "type": "string"
+                          },
+                          "router": {
+                            "type": "string"
+                          },
+                          "range_start": {
+                            "type": "string",
+                            "description": "DHCP-Bereich (leer = keiner)"
+                          },
+                          "range_end": {
+                            "type": "string"
+                          },
+                          "comment": {
+                            "type": "string"
+                          },
+                          "dhcp": {
+                            "type": "boolean",
+                            "description": "DHCP-Netz aus DNS64"
+                          },
+                          "manual": {
+                            "type": "boolean",
+                            "description": "eigene Angaben in IPAM64"
+                          },
+                          "attached": {
+                            "type": "boolean",
+                            "description": "hängt direkt an der Node (Netz-Scan möglich)"
+                          },
+                          "size": {
+                            "type": "integer",
+                            "description": "nutzbare Adressen"
+                          },
+                          "used": {
+                            "type": "integer"
+                          },
+                          "free": {
+                            "type": "integer"
+                          },
+                          "pool_free": {
+                            "type": "integer",
+                            "description": "frei im DHCP-Bereich"
+                          },
+                          "conflicts": {
+                            "type": "integer"
+                          },
+                          "used_pct": {
+                            "type": "number"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Modul aus",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ipam64/addresses": {
+      "get": {
+        "tags": [
+          "IPAM64"
+        ],
+        "summary": "IPAM64: belegte Adressen",
+        "description": "Zusammengeführt aus DHCP, lokalem DNS, Healthchecks, Monitor64, PROXY64, der Nachbartabelle (Netz-Scan) und den von Hand eingetragenen Adressen.",
+        "parameters": [
+          {
+            "name": "network",
+            "in": "query",
+            "required": false,
+            "description": "nur dieses Netz, z. B. `192.168.1.0/24`",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "addresses": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "network": {
+                            "type": "string"
+                          },
+                          "ip": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "note": {
+                            "type": "string"
+                          },
+                          "mac": {
+                            "type": "string"
+                          },
+                          "macs": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "Konflikt: alle beteiligten MAC-Adressen"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "dhcp",
+                              "fixed",
+                              "static",
+                              "conflict"
+                            ]
+                          },
+                          "sources": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "ipam",
+                                "node",
+                                "dhcp",
+                                "dns",
+                                "healthchecks",
+                                "monitor64",
+                                "proxy",
+                                "scan"
+                              ]
+                            }
+                          },
+                          "last_seen": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "state": {
+                            "type": "string",
+                            "enum": [
+                              "online",
+                              "offline",
+                              "unknown",
+                              "conflict"
+                            ]
+                          },
+                          "manual_id": {
+                            "type": "integer",
+                            "description": "von Hand eingetragen: Kennung"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Modul aus oder Netz unbekannt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ipam64/scan": {
+      "post": {
+        "tags": [
+          "IPAM64"
+        ],
+        "summary": "IPAM64: Netz-Scan starten",
+        "description": "Fragt alle Adressen eines direkt angeschlossenen Netzes per ARP ab (ein kleines UDP-Paket je Adresse an Port 9, keine Port-Abfrage) und wartet auf das Ergebnis (wenige Sekunden).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "network"
+                ],
+                "properties": {
+                  "network": {
+                    "type": "string",
+                    "example": "192.168.1.0/24"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "network": {
+                      "type": "string"
+                    },
+                    "found": {
+                      "type": "integer",
+                      "description": "Geräte, die geantwortet haben"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Netz ungültig oder nicht direkt angeschlossen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Modul aus oder Netz unbekannt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }

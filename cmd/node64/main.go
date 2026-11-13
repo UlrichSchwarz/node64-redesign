@@ -321,6 +321,8 @@ func run() error {
 		}
 		return m64Module
 	})
+	// IPAM64 (standardmaessig aus): fuehrt die Adressen der Module zusammen (ipam.go)
+	modules.Register(newIPAM(st, logger.Slog(), modules, dnsModule, hcModule, m64Module, cdnModule))
 	// Verknuepfung mit ipv64.net (Sync-Client); standalone bleibt alles wie gehabt
 	syncClient := nodesync.New(nodesync.Deps{Core: st, HC: hcModule, NF: nfStore, Box: box, Version: Version, Log: logger.Slog(), Senders: notify.Senders(Version), Modules: modules,
 		UnlinkAPI: func(ctx context.Context, nodeID string, keep bool) error { // hubs nicht erreichbar: ueber die API v2 trennen

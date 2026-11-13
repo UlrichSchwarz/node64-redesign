@@ -31,7 +31,7 @@ func AuditDays(st *store.Store) int {
 func auditKeep(st *store.Store) time.Duration { return time.Duration(AuditDays(st)) * 24 * time.Hour }
 
 // Bereiche fuer den Filter im Audit-Log (Praefixe der Aktionsnamen) und in GET /api/audit?area=.
-var auditAreaOrder = []string{"login", "settings", "healthchecks", "monitor64", "dyndns", "cdn64", "dns64", "certs", "sync", "honeypot", "mcp"}
+var auditAreaOrder = []string{"login", "settings", "healthchecks", "monitor64", "dyndns", "cdn64", "dns64", "certs", "sync", "honeypot", "ipam64", "mcp"}
 
 var auditAreas = map[string][]string{
 	"login":        {"setup", "login", "logout", "twofa.", "passkey.", "sso.", "apikey.", "user."},
@@ -44,6 +44,7 @@ var auditAreas = map[string][]string{
 	"certs":        {"cert."},
 	"sync":         {"sync.", "peer."},
 	"honeypot":     {"honeypot."},
+	"ipam64":       {"ipam64."},
 	"mcp":          {"mcp."},
 }
 

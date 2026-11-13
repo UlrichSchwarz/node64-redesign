@@ -1,0 +1,201 @@
+{{define "content"}}
+{{$d := .Data}}
+{{$cur := $d.Cur}}
+<div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+	<h1 class="h4 mb-0 me-auto"><i class="bi bi-grid-3x3-gap text-primary"></i> {{.T "ipam64.title"}}</h1>
+	{{if $cur}}
+	<form method="post" action="/ipam64/scan" class="d-inline">
+		<input type="hidden" name="_csrf" value="{{.CSRF}}">
+		<input type="hidden" name="subnet" value="{{$cur.Subnet}}">
+		<button class="btn btn-sm btn-outline-secondary" type="submit" id="ipam-scan"{{if not $cur.Attached}} disabled title="{{.T "ipam64.err.not_attached"}}"{{else}} title="{{.T "ipam64.scan.hint"}}"{{end}}><i class="bi bi-broadcast"></i> {{.T "ipam64.scan.button"}}</button>
+	</form>
+	<a class="btn btn-sm btn-outline-secondary" href="/ipam64/export.csv?net={{$cur.Subnet}}" id="ipam-export"><i class="bi bi-download"></i> {{.T "ipam64.export"}}</a>
+	<a class="btn btn-sm btn-primary" href="{{$d.URL "form" "addr"}}#ipam-form" id="ipam-reserve"><i class="bi bi-plus-lg"></i> {{.T "ipam64.addr.new"}}</a>
+	{{end}}
+</div>
+<p class="text-body-secondary small">{{.T "ipam64.intro"}}</p>
+
+{{if not $d.Networks}}
+<div class="alert alert-info" id="ipam-empty"><i class="bi bi-info-circle"></i> {{.T "ipam64.empty"}}</div>
+{{end}}
+
+<div class="row g-3 mb-3">
+	<div class="col-6 col-lg-3"><div class="card stat stat-primary"><div class="card-body"><div class="stat-text"><div class="stat-label">{{.T "ipam64.kpi.networks"}}</div><div class="stat-value">{{len $d.Networks}}</div><div class="stat-sub">{{.T "ipam64.kpi.vlans" "n" $d.VLANs}}</div></div><i class="bi bi-diagram-2 stat-icon"></i></div></div></div>
+	<div class="col-6 col-lg-3"><div class="card stat stat-info"><div class="card-body"><div class="stat-text"><div class="stat-label">{{.T "ipam64.kpi.used"}}</div><div class="stat-value">{{$d.Used}}</div><div class="stat-sub">{{.T "ipam64.kpi.of" "n" $d.Size}}</div></div><i class="bi bi-hdd-network stat-icon"></i></div></div></div>
+	<div class="col-6 col-lg-3"><div class="card stat stat-ok"><div class="card-body"><div class="stat-text"><div class="stat-label">{{.T "ipam64.kpi.free"}}</div><div class="stat-value">{{$d.Free}}</div><div class="stat-sub">{{.Float $d.FreePct 0}} %</div></div><i class="bi bi-check2-circle stat-icon"></i></div></div></div>
+	<div class="col-6 col-lg-3"><div class="card stat {{if $d.Conflicts}}stat-down{{else}}stat-ok{{end}}"><div class="card-body"><div class="stat-text"><div class="stat-label">{{.T "ipam64.kpi.conflicts"}}</div><div class="stat-value{{if $d.Conflicts}} text-danger{{end}}" id="ipam-conflicts">{{$d.Conflicts}}</div><div class="stat-sub">{{.T "ipam64.kpi.conflicts_sub"}}</div></div><i class="bi bi-exclamation-triangle stat-icon"></i></div></div></div>
+</div>
+
+{{if eq $d.Form "net"}}
+<div class="card mb-3 border-primary" id="ipam-form">
+	<div class="card-header">{{if $d.NetEdit}}{{.T "ipam64.net.edit"}}{{else}}{{.T "ipam64.net.new"}}{{end}}</div>
+	<div class="card-body">
+		{{if $d.Err}}<div class="alert alert-danger py-2 small" id="ipam-form-error">{{$d.Err}}</div>{{end}}
+		<form method="post" action="/ipam64/network" class="row g-2">
+			<input type="hidden" name="_csrf" value="{{.CSRF}}">
+			{{if $d.NetEdit}}<input type="hidden" name="edit" value="1">{{end}}
+			<div class="col-md-3"><label class="form-label small" for="ipam-n-subnet">{{.T "ipam64.net.subnet"}}</label>
+				<input class="form-control form-control-sm font-monospace" id="ipam-n-subnet" name="subnet" value="{{$d.NetForm.Subnet}}" placeholder="192.168.1.0/24" required{{if $d.NetEdit}} readonly{{else}} list="ipam-subnets"{{end}}>
+				<datalist id="ipam-subnets">{{range $d.Subnets}}<option value="{{.}}">{{end}}</datalist></div>
+			<div class="col-md-3"><label class="form-label small" for="ipam-n-name">{{.T "ipam64.net.name"}}</label><input class="form-control form-control-sm" id="ipam-n-name" name="name" value="{{$d.NetForm.Name}}" maxlength="64"></div>
+			<div class="col-6 col-md-2"><label class="form-label small" for="ipam-n-vlan">VLAN</label><input class="form-control form-control-sm" id="ipam-n-vlan" name="vlan" type="number" min="0" max="4094" value="{{if $d.NetForm.VLAN}}{{$d.NetForm.VLAN}}{{end}}"></div>
+			<div class="col-6 col-md-2"><label class="form-label small" for="ipam-n-iface">{{.T "ipam64.net.iface"}}</label><input class="form-control form-control-sm font-monospace" id="ipam-n-iface" name="iface" value="{{$d.NetForm.Iface}}" maxlength="32"></div>
+			<div class="col-md-2"><label class="form-label small" for="ipam-n-router">{{.T "ipam64.net.router"}}</label><input class="form-control form-control-sm font-monospace" id="ipam-n-router" name="router" value="{{$d.NetForm.Router}}"></div>
+			{{if and $cur $cur.DHCP $d.NetEdit}}
+			<div class="col-12 form-text">{{.T "ipam64.net.from_dhcp"}} <a href="/dns64/dhcp">{{.T "nav.dhcp"}}</a></div>
+			{{else}}
+			<div class="col-6 col-md-3"><label class="form-label small" for="ipam-n-rs">{{.T "ipam64.net.range_start"}}</label><input class="form-control form-control-sm font-monospace" id="ipam-n-rs" name="range_start" value="{{$d.NetForm.RangeStart}}"></div>
+			<div class="col-6 col-md-3"><label class="form-label small" for="ipam-n-re">{{.T "ipam64.net.range_end"}}</label><input class="form-control form-control-sm font-monospace" id="ipam-n-re" name="range_end" value="{{$d.NetForm.RangeEnd}}"></div>
+			<div class="col-12 form-text">{{.T "ipam64.net.range_hint"}}</div>
+			{{end}}
+			<div class="col-12"><label class="form-label small" for="ipam-n-comment">{{.T "ipam64.comment"}}</label><input class="form-control form-control-sm" id="ipam-n-comment" name="comment" value="{{$d.NetForm.Comment}}" maxlength="200"></div>
+			<div class="col-12 d-flex gap-2">
+				<button class="btn btn-sm btn-primary" type="submit">{{.T "common.save"}}</button>
+				<a class="btn btn-sm btn-outline-secondary" href="{{$d.URL}}">{{.T "common.cancel"}}</a>
+			</div>
+		</form>
+		{{if and $d.NetEdit $cur $cur.Manual}}
+		<form method="post" action="/ipam64/network/delete" class="mt-2">
+			<input type="hidden" name="_csrf" value="{{.CSRF}}">
+			<input type="hidden" name="subnet" value="{{$cur.Subnet}}">
+			<button class="btn btn-sm btn-outline-danger" type="submit" data-confirm="{{.T "ipam64.net.delete_confirm"}}"><i class="bi bi-trash"></i> {{if $cur.DHCP}}{{.T "ipam64.net.reset"}}{{else}}{{.T "ipam64.net.delete"}}{{end}}</button>
+		</form>
+		{{end}}
+	</div>
+</div>
+{{end}}
+
+{{if eq $d.Form "addr"}}
+<div class="card mb-3 border-primary" id="ipam-form">
+	<div class="card-header">{{if $d.AddrForm.ID}}{{.T "ipam64.addr.edit"}}{{else}}{{.T "ipam64.addr.new"}}{{end}}</div>
+	<div class="card-body">
+		{{if $d.Err}}<div class="alert alert-danger py-2 small" id="ipam-form-error">{{$d.Err}}</div>{{end}}
+		<form method="post" action="/ipam64/address" class="row g-2">
+			<input type="hidden" name="_csrf" value="{{.CSRF}}">
+			<input type="hidden" name="net" value="{{if $cur}}{{$cur.Subnet}}{{end}}">
+			<input type="hidden" name="id" value="{{$d.AddrForm.ID}}">
+			<div class="col-md-3"><label class="form-label small" for="ipam-a-ip">{{.T "ipam64.col.ip"}}</label><input class="form-control form-control-sm font-monospace" id="ipam-a-ip" name="ip" value="{{$d.AddrForm.IP}}" required></div>
+			<div class="col-md-3"><label class="form-label small" for="ipam-a-name">{{.T "ipam64.col.name"}}</label><input class="form-control form-control-sm" id="ipam-a-name" name="name" value="{{$d.AddrForm.Name}}" maxlength="64" required></div>
+			<div class="col-md-3"><label class="form-label small" for="ipam-a-mac">{{.T "ipam64.col.mac"}}</label><input class="form-control form-control-sm font-monospace" id="ipam-a-mac" name="mac" value="{{$d.AddrForm.MAC}}" placeholder="aa:bb:cc:dd:ee:ff"></div>
+			<div class="col-md-3"><label class="form-label small" for="ipam-a-comment">{{.T "ipam64.comment"}}</label><input class="form-control form-control-sm" id="ipam-a-comment" name="comment" value="{{$d.AddrForm.Comment}}" maxlength="200"></div>
+			<div class="col-12 form-text">{{.T "ipam64.addr.hint"}}</div>
+			<div class="col-12 d-flex gap-2">
+				<button class="btn btn-sm btn-primary" type="submit">{{.T "common.save"}}</button>
+				<a class="btn btn-sm btn-outline-secondary" href="{{$d.URL}}">{{.T "common.cancel"}}</a>
+			</div>
+		</form>
+	</div>
+</div>
+{{end}}
+
+<div class="row g-3 mb-3">
+	<div class="col-lg-4">
+		<div class="card h-100" id="ipam-networks">
+			<div class="card-header d-flex align-items-center"><span class="me-auto">{{.T "ipam64.net.title"}}</span><a class="btn btn-sm btn-outline-secondary" href="{{$d.URL "form" "net" "new" "1"}}#ipam-form" id="ipam-net-new">{{.T "ipam64.net.new"}}</a></div>
+			<div class="card-body d-flex flex-column gap-2">
+				{{range $d.Networks}}
+				<a class="ipam-net{{if and $cur (eq .Subnet $cur.Subnet)}} active{{end}}" href="/ipam64?net={{.Subnet}}">
+					<span class="d-flex align-items-center gap-2"><strong class="me-auto text-truncate">{{.Label}}</strong>{{if .Conflicts}}<span class="badge text-bg-danger">{{.Conflicts}}</span>{{end}}{{if .VLAN}}<span class="badge text-bg-light border fw-normal font-monospace">VLAN {{.VLAN}}</span>{{end}}</span>
+					<span class="d-block small font-monospace text-body-secondary">{{.Subnet}}{{if .Iface}} · {{.Iface}}{{end}}</span>
+					<span class="progress my-1" role="progressbar" aria-valuenow="{{printf "%.0f" .Pct}}" aria-valuemin="0" aria-valuemax="100"><span class="progress-bar{{if ge .Pct 90.0}} bg-danger{{else if ge .Pct 75.0}} bg-warning{{end}}" style="width: {{printf "%.1f" .Pct}}%"></span></span>
+					<span class="d-flex small text-body-secondary"><span class="me-auto">{{$.T "ipam64.net.used" "n" .Used "size" .Size}}</span><span>{{$.T "ipam64.net.free" "n" .Free}}</span></span>
+				</a>
+				{{else}}
+				<div class="text-body-secondary small">{{.T "ipam64.net.none"}}</div>
+				{{end}}
+				<form method="post" action="/ipam64/autoscan" class="d-flex align-items-center gap-2 mt-auto pt-2 small">
+					<input type="hidden" name="_csrf" value="{{.CSRF}}">
+					<input type="hidden" name="subnet" value="{{if $cur}}{{$cur.Subnet}}{{end}}">
+					<label for="ipam-auto" class="text-body-secondary text-nowrap">{{.T "ipam64.scan.auto"}}</label>
+					<select class="form-select form-select-sm" id="ipam-auto" name="minutes">{{range $d.AutoOpts}}<option value="{{.}}"{{if eq . $d.AutoScan}} selected{{end}}>{{if .}}{{$.T "ipam64.scan.every" "n" .}}{{else}}{{$.T "ipam64.scan.off"}}{{end}}</option>{{end}}</select>
+					<button class="btn btn-sm btn-outline-secondary" type="submit">{{.T "common.save"}}</button>
+				</form>
+				<div class="small text-body-secondary">{{if $d.LastScan.IsZero}}{{.T "ipam64.scan.never"}}{{else}}{{.T "ipam64.scan.last" "ago" (.Ago $d.LastScan)}}{{end}}</div>
+			</div>
+		</div>
+	</div>
+	<div class="col-lg-8">
+		<div class="card h-100" id="ipam-map">
+			{{if $cur}}
+			<div class="card-header d-flex flex-wrap align-items-center gap-2">
+				<span class="me-auto">{{.T "ipam64.map.title"}} <span class="font-monospace text-body-secondary">{{$cur.Subnet}}</span> <a class="btn btn-sm btn-link py-0 px-1" href="{{$d.URL "form" "net"}}#ipam-form" title="{{.T "ipam64.net.edit"}}" aria-label="{{.T "ipam64.net.edit"}}" id="ipam-net-edit"><i class="bi bi-pencil"></i></a></span>
+				<span class="small text-body-secondary">{{if $cur.RangeStart}}{{.T "ipam64.map.pool"}} <span class="font-monospace">{{$cur.RangeStart}} – {{$cur.RangeEnd}}</span>{{end}}{{if $cur.Router}}{{if $cur.RangeStart}} · {{end}}{{.T "ipam64.net.router"}} <span class="font-monospace">{{$cur.Router}}</span>{{end}}</span>
+			</div>
+			<div class="card-body">
+				{{if $d.Blocks}}<nav class="nav nav-pills nav-sm flex-wrap gap-1 mb-2 small">{{range $d.Blocks}}<a class="nav-link py-0 px-2 font-monospace{{if eq .N $d.Block}} active{{end}}" href="{{$d.URL "block" (printf "%d" .N)}}">{{.Label}}</a>{{end}}</nav>{{end}}
+				<div class="ipam-grid" role="img" aria-label="{{.T "ipam64.map.title"}} {{$cur.Subnet}}">
+					{{range $d.Rows}}<div class="ipam-row">{{range .}}{{if eq .Class "na"}}<span class="ipam-cell ipam-na" title="{{.IP}}"></span>{{else if or (eq .Class "free") (eq .Class "pool")}}<a class="ipam-cell ipam-{{.Class}}" href="{{$d.URL "form" "addr" "ip" .IP}}#ipam-form" title="{{.IP}}"></a>{{else}}<a class="ipam-cell ipam-{{.Class}}" href="#ip-{{.IP}}" title="{{.IP}}{{if .Name}} · {{.Name}}{{end}}"></a>{{end}}{{end}}</div>{{end}}
+				</div>
+				<div class="d-flex small font-monospace text-body-secondary mt-1"><span class="me-auto">{{$d.MapFirst}}</span><span>{{$d.MapLast}}</span></div>
+				<div class="d-flex flex-wrap gap-3 small mt-2" id="ipam-legend">
+					<span><span class="ipam-cell ipam-dhcp"></span> {{.T "ipam64.kind.dhcp"}} <span class="text-body-secondary">{{index $d.Counts "dhcp"}}</span></span>
+					<span><span class="ipam-cell ipam-fixed"></span> {{.T "ipam64.kind.fixed"}} <span class="text-body-secondary">{{index $d.Counts "fixed"}}</span></span>
+					<span><span class="ipam-cell ipam-static"></span> {{.T "ipam64.kind.static"}} <span class="text-body-secondary">{{index $d.Counts "static"}}</span></span>
+					<span><span class="ipam-cell ipam-conflict"></span> {{.T "ipam64.kind.conflict"}} <span class="text-body-secondary">{{index $d.Counts "conflict"}}</span></span>
+					{{if $cur.RangeStart}}<span><span class="ipam-cell ipam-pool"></span> {{.T "ipam64.map.pool_free"}} <span class="text-body-secondary">{{$cur.PoolFree}}</span></span>{{end}}
+					<span><span class="ipam-cell ipam-free"></span> {{.T "ipam64.map.free"}} <span class="text-body-secondary">{{$d.FreePlain}}</span></span>
+				</div>
+				{{if not $cur.Attached}}<div class="form-text mt-2"><i class="bi bi-info-circle"></i> {{.T "ipam64.err.not_attached"}}</div>{{end}}
+			</div>
+			{{else}}
+			<div class="card-body text-body-secondary small">{{.T "ipam64.net.none"}}</div>
+			{{end}}
+		</div>
+	</div>
+</div>
+
+{{if $cur}}
+<div class="card" id="ipam-list">
+	<div class="card-header d-flex flex-wrap align-items-center gap-2">
+		<span class="me-auto">{{.T "ipam64.list.title"}} <span class="text-body-secondary">{{$cur.Label}}</span></span>
+		<form method="get" action="/ipam64" class="d-flex gap-1" role="search">
+			<input type="hidden" name="net" value="{{$cur.Subnet}}">
+			{{if $d.Filter}}<input type="hidden" name="kind" value="{{$d.Filter}}">{{end}}
+			<input class="form-control form-control-sm" type="search" name="q" value="{{$d.Query}}" placeholder="{{.T "ipam64.list.search"}}" aria-label="{{.T "ipam64.list.search"}}">
+			<button class="btn btn-sm btn-outline-secondary" type="submit" aria-label="{{.T "ipam64.list.search"}}"><i class="bi bi-search"></i></button>
+		</form>
+		<nav class="nav nav-pills small" id="ipam-filter">
+			<a class="nav-link py-1 px-2{{if not $d.Filter}} active{{end}}" href="{{$d.URL "kind" ""}}#ipam-list">{{.T "ipam64.list.all"}} {{$d.Total}}</a>
+			<a class="nav-link py-1 px-2{{if eq $d.Filter "dhcp"}} active{{end}}" href="{{$d.URL "kind" "dhcp"}}#ipam-list">DHCP {{index $d.Counts "dhcp"}}</a>
+			<a class="nav-link py-1 px-2{{if eq $d.Filter "fixed"}} active{{end}}" href="{{$d.URL "kind" "fixed"}}#ipam-list">{{.T "ipam64.list.fixed"}} {{index $d.Counts "fixed"}}</a>
+			<a class="nav-link py-1 px-2{{if eq $d.Filter "static"}} active{{end}}" href="{{$d.URL "kind" "static"}}#ipam-list">{{.T "ipam64.kind.static"}} {{index $d.Counts "static"}}</a>
+			<a class="nav-link py-1 px-2{{if eq $d.Filter "conflict"}} active{{end}}" href="{{$d.URL "kind" "conflict"}}#ipam-list">{{.T "ipam64.list.conflicts"}} {{index $d.Counts "conflict"}}</a>
+		</nav>
+	</div>
+	{{if $d.Entries}}
+	<div class="table-responsive">
+		<table class="table table-sm table-hover align-middle mb-0">
+			<thead><tr><th class="ps-3">{{.T "ipam64.col.ip"}}</th><th>{{.T "ipam64.col.name"}}</th><th>{{.T "ipam64.col.mac"}}</th><th>{{.T "ipam64.col.kind"}}</th><th>{{.T "ipam64.col.sources"}}</th><th>{{.T "ipam64.col.seen"}}</th><th>{{.T "ipam64.col.state"}}</th><th class="pe-3"></th></tr></thead>
+			<tbody>
+				{{range $d.Entries}}
+				<tr id="ip-{{.IP}}">
+					<td class="font-monospace fw-semibold text-nowrap ps-3">{{.IP}}</td>
+					<td><div class="fw-semibold">{{if .Name}}{{.Name}}{{else if .NameKey}}{{$.T .NameKey}}{{else}}<span class="text-body-secondary fw-normal">–</span>{{end}}</div>{{if .Note}}<div class="small text-body-secondary">{{.Note}}</div>{{else if .NoteKey}}<div class="small text-body-secondary">{{$.T .NoteKey}}</div>{{end}}</td>
+					<td class="font-monospace small text-body-secondary">{{if .MACs}}{{range .MACs}}<div>{{.}}</div>{{end}}{{else if .MAC}}{{.MAC}}{{else}}–{{end}}</td>
+					<td class="text-nowrap"><span class="ipam-cell ipam-{{.Kind}}"></span> {{$.T (printf "ipam64.kind.%s" .Kind)}}</td>
+					<td>{{range .Sources}}<span class="badge text-bg-light border fw-normal me-1">{{$.T (printf "ipam64.src.%s" .)}}</span>{{end}}</td>
+					<td class="text-nowrap text-body-secondary">{{if .Seen.IsZero}}–{{else}}<span title="{{$.Time .Seen}}">{{$.Ago .Seen}}</span>{{end}}</td>
+					<td>{{if eq .State "online"}}<span class="badge text-bg-success">{{$.T "ipam64.state.online"}}</span>{{else if eq .State "conflict"}}<span class="badge text-bg-danger">{{$.T "ipam64.kind.conflict"}}</span>{{else if eq .State "offline"}}<span class="badge text-bg-secondary">{{$.T "ipam64.state.offline"}}</span>{{else}}<span class="badge text-bg-light border fw-normal">{{$.T "ipam64.state.unknown"}}</span>{{end}}</td>
+					<td class="text-end text-nowrap pe-3">
+						{{if .ManualID}}
+						<a class="btn btn-sm btn-outline-secondary" href="{{$d.URL "form" "addr" "edit" (printf "%d" .ManualID)}}#ipam-form" title="{{$.T "ipam64.addr.edit"}}"><i class="bi bi-pencil"></i></a>
+						<form method="post" action="/ipam64/address/delete" class="d-inline">
+							<input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="net" value="{{$cur.Subnet}}"><input type="hidden" name="id" value="{{.ManualID}}"><input type="hidden" name="ip" value="{{.IP}}">
+							<button class="btn btn-sm btn-outline-danger" type="submit" title="{{$.T "ipam64.addr.delete"}}" data-confirm="{{$.T "ipam64.addr.delete_confirm"}}"><i class="bi bi-trash"></i></button>
+						</form>
+						{{else if eq .Kind "static"}}
+						<a class="btn btn-sm btn-outline-secondary" href="{{$d.URL "form" "addr" "ip" .IP}}#ipam-form" title="{{$.T "ipam64.addr.adopt"}}"><i class="bi bi-bookmark-plus"></i></a>
+						{{end}}
+					</td>
+				</tr>
+				{{end}}
+			</tbody>
+		</table>
+	</div>
+	<div class="card-footer small text-body-secondary">{{.T "ipam64.list.count" "n" (len $d.Entries) "total" $d.Total}}</div>
+	{{else}}
+	<div class="card-body text-body-secondary small" id="ipam-list-empty">{{if $d.Total}}{{.T "ipam64.list.no_match"}}{{else}}{{.T "ipam64.list.empty"}}{{end}}</div>
+	{{end}}
+</div>
+{{end}}
+{{end}}

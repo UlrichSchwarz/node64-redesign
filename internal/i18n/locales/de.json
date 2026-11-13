@@ -104,6 +104,7 @@
     "status_pages": "Statusseiten",
     "honeypot": "Honeypot64",
     "sonar64": "Sonar64",
+    "ipam64": "IPAM64",
     "monitor64": "Monitor64",
     "settings_general": "Allgemein",
     "settings_ports": "Ports",
@@ -1858,6 +1859,7 @@
       "certs": "Zertifikate",
       "sync": "ipv64 & Gruppe",
       "honeypot": "Honeypot64",
+      "ipam64": "IPAM64",
       "mcp": "KI (MCP)"
     },
     "actions": {
@@ -2025,6 +2027,12 @@
       "peer_ipv64_key": "API-Key aus dem Cluster übernommen",
       "peer_ipv64_key_removed": "API-Key über den Cluster entfernt",
       "peer_node_setting": "Einstellung aus dem Cluster übernommen",
+      "ipam64_network_save": "IPAM64: Netz gespeichert",
+      "ipam64_network_delete": "IPAM64: Netz gelöscht",
+      "ipam64_address_save": "IPAM64: Adresse gespeichert",
+      "ipam64_address_delete": "IPAM64: Eintrag gelöscht",
+      "ipam64_scan": "IPAM64: Netz-Scan",
+      "ipam64_autoscan": "IPAM64: automatischer Netz-Scan geändert",
       "honeypot_config": "Honeypot64-Einstellungen geändert",
       "honeypot_clear": "Honeypot64-Ereignisse gelöscht",
       "honeypot_watch_add": "Frühwarnung: Netz eingetragen",
@@ -2075,7 +2083,8 @@
     "dyndns": "DynDNS-Updater",
     "proxy": "Reverse-Proxy",
     "link": "ipv64-Verknüpfung",
-    "sonar64": "Sonar64 (Community-Messnetz)"
+    "sonar64": "Sonar64 (Community-Messnetz)",
+    "ipam64": "IPAM64 (IP-Belegung der Netze)"
   },
   "ipv64key": {
     "title": "ipv64-API-Key",
@@ -5109,6 +5118,11 @@
       "h1": "Ping über ICMP und UDP 6464, feste Grenzen, nie private Ziele",
       "h2": "Nur ausgehend oder auch gemessen werden, Standort öffentlich nur verschleiert"
     },
+    "ipam64": {
+      "desc": "Zeigt, welche Adresse in welchem Netz belegt ist – ohne eigene Datenpflege, zusammengeführt aus dem, was die Node schon weiß.",
+      "h1": "Adresskarte je Netz, Belegungsliste mit Art, MAC und „Zuletzt gesehen“",
+      "h2": "Netz-Scan per ARP, Erkennung von Adresskonflikten, CSV-Export"
+    },
     "monitor64": {
       "desc": "Überwacht deine Systeme mit Schwellen und Verlauf: Füllstände, CPU, RAM, Platten mit SMART, Netzwerk und Bonding – per Agent, SSH, SNMP oder API.",
       "h1": "Linux, Windows, Proxmox VE/PBS, Docker, NAS, Switches und USV",
@@ -7181,6 +7195,139 @@
         "uncorrectable": "Nicht korrigierbare Sektoren bzw. Fehler",
         "crc_errors": "CRC-Fehler der Verbindung"
       }
+    }
+  },
+  "ipam64": {
+    "title": "IPAM64",
+    "intro": "IP-Belegung aller Netze – zusammengeführt aus DHCP, lokalem DNS, Healthchecks, Monitor64, PROXY64 und dem Netz-Scan.",
+    "empty": "Noch kein Netz bekannt. DHCP-Netze aus DNS64 erscheinen von selbst; andere Netze legst du mit „Netz anlegen“ an.",
+    "export": "CSV exportieren",
+    "comment": "Bemerkung",
+    "kpi": {
+      "networks": "Netze",
+      "vlans": "{n} VLANs",
+      "used": "Belegte Adressen",
+      "of": "von {n}",
+      "free": "Freie Adressen",
+      "conflicts": "Konflikte",
+      "conflicts_sub": "zwei MAC-Adressen an einer IP"
+    },
+    "net": {
+      "title": "Netze",
+      "new": "Netz anlegen",
+      "edit": "Netz bearbeiten",
+      "none": "Kein Netz vorhanden.",
+      "subnet": "Netz (IPv4, /20 bis /30)",
+      "name": "Name",
+      "iface": "Schnittstelle",
+      "router": "Router",
+      "range_start": "DHCP-Bereich von",
+      "range_end": "DHCP-Bereich bis",
+      "range_hint": "Bereich eines fremden DHCP-Servers (z. B. des Routers) – nur für die Anzeige in der Adresskarte.",
+      "from_dhcp": "Dieses Netz kommt aus dem DHCP-Server von DNS64; Bereich und Vergaben änderst du dort. Hier ergänzt du Name und VLAN:",
+      "used": "{n} von {size} belegt",
+      "free": "{n} frei",
+      "delete": "Netz löschen",
+      "reset": "Eigene Angaben entfernen",
+      "delete_confirm": "Netz wirklich löschen? Von Hand eingetragene Adressen in diesem Netz werden mit gelöscht."
+    },
+    "map": {
+      "title": "Adresskarte",
+      "pool": "DHCP-Bereich",
+      "pool_free": "Frei im DHCP-Bereich",
+      "free": "Frei"
+    },
+    "kind": {
+      "dhcp": "DHCP-Vergabe",
+      "fixed": "Feste Adresse",
+      "static": "Statisch",
+      "conflict": "Konflikt"
+    },
+    "state": {
+      "online": "Online",
+      "offline": "Offline",
+      "unknown": "Unbekannt"
+    },
+    "src": {
+      "ipam": "IPAM64",
+      "node": "Node64",
+      "dhcp": "DHCP",
+      "dns": "Lokaler DNS",
+      "healthchecks": "Healthchecks",
+      "monitor64": "Monitor64",
+      "proxy": "PROXY64",
+      "scan": "Netz-Scan"
+    },
+    "note": {
+      "self": "diese Node",
+      "router": "Router (Gateway)",
+      "conflict": "mehrere MAC-Adressen melden diese IP"
+    },
+    "col": {
+      "ip": "IP-Adresse",
+      "name": "Name",
+      "mac": "MAC-Adresse",
+      "kind": "Art",
+      "sources": "Bekannt aus",
+      "seen": "Zuletzt gesehen",
+      "state": "Zustand"
+    },
+    "list": {
+      "title": "Belegungsliste",
+      "all": "Alle",
+      "fixed": "Fest",
+      "conflicts": "Konflikte",
+      "search": "IP, Name oder MAC …",
+      "count": "{n} von {total} Einträgen",
+      "empty": "In diesem Netz ist noch keine Adresse bekannt. „Netz scannen“ sucht die Geräte.",
+      "no_match": "Kein Eintrag passt zum Filter."
+    },
+    "addr": {
+      "new": "Adresse reservieren",
+      "edit": "Adresse bearbeiten",
+      "adopt": "In IPAM64 eintragen",
+      "delete": "Eintrag löschen",
+      "delete_confirm": "Eintrag wirklich löschen?",
+      "hint": "Für Geräte mit fest eingestellter Adresse. Feste Adressen, die der DHCP-Server vergeben soll, legst du unter DNS64 › DHCP an."
+    },
+    "scan": {
+      "button": "Netz scannen",
+      "hint": "Fragt alle Adressen des Netzes per ARP ab (ein kleines UDP-Paket je Adresse, keine Port-Abfrage).",
+      "auto": "Automatisch scannen",
+      "off": "aus",
+      "every": "alle {n} Min.",
+      "never": "Noch kein Netz-Scan.",
+      "last": "Letzter Netz-Scan {ago}."
+    },
+    "flash": {
+      "network_saved": "Netz gespeichert.",
+      "network_deleted": "Netz gelöscht.",
+      "address_saved": "Adresse gespeichert.",
+      "address_deleted": "Eintrag gelöscht.",
+      "scanned": "Netz-Scan fertig: {n} Geräte haben geantwortet.",
+      "autoscan_saved": "Automatischer Netz-Scan gespeichert."
+    },
+    "err": {
+      "subnet": "Das Netz ist ungültig (Beispiel: 192.168.1.0/24).",
+      "prefix": "Erlaubt sind Netze von /20 bis /30.",
+      "overlap": "Das Netz überschneidet sich mit einem vorhandenen Netz.",
+      "name": "Name bzw. Bemerkung ist ungültig oder zu lang.",
+      "iface": "Die Schnittstelle ist ungültig.",
+      "vlan": "VLAN muss zwischen 1 und 4094 liegen.",
+      "router": "Der Router liegt nicht im Netz.",
+      "range": "Der DHCP-Bereich ist ungültig oder liegt nicht im Netz.",
+      "ip": "Die IP-Adresse ist ungültig.",
+      "no_net": "Die Adresse liegt in keinem bekannten Netz.",
+      "mac": "Die MAC-Adresse ist ungültig (Beispiel: aa:bb:cc:dd:ee:ff).",
+      "taken": "Diese Adresse ist schon eingetragen.",
+      "not_found": "Nicht gefunden.",
+      "not_attached": "Dieses Netz hängt nicht direkt an der Node (z. B. Docker-Bridge oder geroutetes VLAN) – ein Netz-Scan ist hier nicht möglich.",
+      "internal": "Interner Fehler, siehe Logs."
+    },
+    "card": {
+      "networks": "Netze",
+      "used": "Belegt",
+      "conflicts": "Konflikte"
     }
   }
 }

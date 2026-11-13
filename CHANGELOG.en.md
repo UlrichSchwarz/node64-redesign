@@ -4,6 +4,8 @@ Short summary of what changes per version. Details per module are in the node un
 
 ## Unreleased
 
+- IPAM64: new module (off by default) – IP usage of all networks with address map and address list, merged from DHCP, local DNS, Healthchecks, Monitor64 and PROXY64; network scan via ARP, detection of address conflicts, own networks and reserved addresses, CSV export (community draft).
+
 ## 1.5.9 – 2026-11-13
 
 - Interface: new design as default – sidebar with groups (overview, modules, system), orange accent, Inter and JetBrains Mono fonts, light and dark on equal footing (community draft). The previous look stays available under Settings → Appearance → Design → "Classic".

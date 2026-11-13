@@ -508,6 +508,27 @@ func scanHost(row interface{ Scan(...any) error }) (*Host, error) {
 	return &h, nil
 }
 
+// ProxyTarget ist das Ziel eines eingeschalteten Proxy-Hosts (fuer IPAM64).
+type ProxyTarget struct {
+	Name string // erster Name des Hosts
+	Host string // Name oder IP des Ziels
+}
+
+// ProxyTargets liefert die Ziele der eingeschalteten Proxy-Hosts.
+func (m *Module) ProxyTargets(ctx context.Context) []ProxyTarget {
+	list, err := m.hosts(ctx)
+	if err != nil {
+		return nil
+	}
+	var out []ProxyTarget
+	for _, h := range list {
+		if h.Enabled && h.TargetHost != "" && len(h.Names) > 0 {
+			out = append(out, ProxyTarget{Name: h.Names[0], Host: h.TargetHost})
+		}
+	}
+	return out
+}
+
 func (m *Module) hosts(ctx context.Context) ([]*Host, error) {
 	rows, err := m.core.Reader().QueryContext(ctx, `SELECT `+hostCols+` FROM cdn_hosts ORDER BY names`)
 	if err != nil {

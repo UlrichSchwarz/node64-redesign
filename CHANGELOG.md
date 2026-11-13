@@ -4,6 +4,8 @@ Kurz, was sich je Version ändert. Einzelheiten je Modul stehen in der Node unte
 
 ## Unveröffentlicht
 
+- IPAM64: Neues Modul (standardmäßig aus) – IP-Belegung aller Netze mit Adresskarte und Belegungsliste, zusammengeführt aus DHCP, lokalem DNS, Healthchecks, Monitor64 und PROXY64; Netz-Scan per ARP, Erkennung von Adresskonflikten, eigene Netze und reservierte Adressen, CSV-Export (Entwurf aus der Community).
+
 ## 1.5.9 – 2026-11-13
 
 - Oberfläche: Neues Design als Standard – Seitenleiste mit Gruppen (Übersicht, Module, System), Orange als Akzent, Schriften Inter und JetBrains Mono, Hell und Dunkel gleichwertig (Entwurf aus der Community). Das bisherige Aussehen bleibt unter Einstellungen → Darstellung → Design → „Klassisch“ wählbar.

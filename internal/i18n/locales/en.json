@@ -104,6 +104,7 @@
     "status_pages": "Status pages",
     "honeypot": "Honeypot64",
     "sonar64": "Sonar64",
+    "ipam64": "IPAM64",
     "monitor64": "Monitor64",
     "settings_general": "General",
     "settings_ports": "Ports",
@@ -1858,6 +1859,7 @@
       "certs": "Certificates",
       "sync": "ipv64 & group",
       "honeypot": "Honeypot64",
+      "ipam64": "IPAM64",
       "mcp": "AI (MCP)"
     },
     "actions": {
@@ -2025,6 +2027,12 @@
       "peer_ipv64_key": "API key taken from the cluster",
       "peer_ipv64_key_removed": "API key removed via the cluster",
       "peer_node_setting": "Setting taken from the cluster",
+      "ipam64_network_save": "IPAM64: network saved",
+      "ipam64_network_delete": "IPAM64: network deleted",
+      "ipam64_address_save": "IPAM64: address saved",
+      "ipam64_address_delete": "IPAM64: entry deleted",
+      "ipam64_scan": "IPAM64: network scan",
+      "ipam64_autoscan": "IPAM64: automatic network scan changed",
       "honeypot_config": "Honeypot64 settings changed",
       "honeypot_clear": "Honeypot64 events deleted",
       "honeypot_watch_add": "Early warning: network added",
@@ -2075,7 +2083,8 @@
     "dyndns": "DynDNS Updater",
     "proxy": "Reverse Proxy",
     "link": "ipv64 Link",
-    "sonar64": "Sonar64 (community measurement network)"
+    "sonar64": "Sonar64 (community measurement network)",
+    "ipam64": "IPAM64 (IP usage of your networks)"
   },
   "ipv64key": {
     "title": "ipv64 API key",
@@ -5109,6 +5118,11 @@
       "h1": "Ping via ICMP and UDP 6464, fixed limits, never private targets",
       "h2": "Outgoing only or also measured, location only shown blurred"
     },
+    "ipam64": {
+      "desc": "Shows which address is used in which network – no extra bookkeeping, merged from what the node already knows.",
+      "h1": "Address map per network, address list with type, MAC and “last seen”",
+      "h2": "Network scan via ARP, detection of address conflicts, CSV export"
+    },
     "monitor64": {
       "desc": "Monitors your systems with thresholds and history: fill levels, CPU, RAM, disks with SMART, network and bonding – via agent, SSH, SNMP or API.",
       "h1": "Linux, Windows, Proxmox VE/PBS, Docker, NAS, switches and UPS",
@@ -7181,6 +7195,139 @@
         "uncorrectable": "Uncorrectable sectors or errors",
         "crc_errors": "Interface CRC errors"
       }
+    }
+  },
+  "ipam64": {
+    "title": "IPAM64",
+    "intro": "IP usage of all networks – merged from DHCP, local DNS, Healthchecks, Monitor64, PROXY64 and the network scan.",
+    "empty": "No network known yet. DHCP networks from DNS64 appear automatically; add other networks with “Add network”.",
+    "export": "Export CSV",
+    "comment": "Comment",
+    "kpi": {
+      "networks": "Networks",
+      "vlans": "{n} VLANs",
+      "used": "Used addresses",
+      "of": "of {n}",
+      "free": "Free addresses",
+      "conflicts": "Conflicts",
+      "conflicts_sub": "two MAC addresses on one IP"
+    },
+    "net": {
+      "title": "Networks",
+      "new": "Add network",
+      "edit": "Edit network",
+      "none": "No network yet.",
+      "subnet": "Network (IPv4, /20 to /30)",
+      "name": "Name",
+      "iface": "Interface",
+      "router": "Router",
+      "range_start": "DHCP range from",
+      "range_end": "DHCP range to",
+      "range_hint": "Range of another DHCP server (e.g. your router) – only shown in the address map.",
+      "from_dhcp": "This network comes from the DHCP server of DNS64; change range and leases there. Here you add name and VLAN:",
+      "used": "{n} of {size} used",
+      "free": "{n} free",
+      "delete": "Delete network",
+      "reset": "Remove own details",
+      "delete_confirm": "Really delete this network? Manually entered addresses in it are deleted as well."
+    },
+    "map": {
+      "title": "Address map",
+      "pool": "DHCP range",
+      "pool_free": "Free in DHCP range",
+      "free": "Free"
+    },
+    "kind": {
+      "dhcp": "DHCP lease",
+      "fixed": "Fixed address",
+      "static": "Static",
+      "conflict": "Conflict"
+    },
+    "state": {
+      "online": "Online",
+      "offline": "Offline",
+      "unknown": "Unknown"
+    },
+    "src": {
+      "ipam": "IPAM64",
+      "node": "Node64",
+      "dhcp": "DHCP",
+      "dns": "Local DNS",
+      "healthchecks": "Healthchecks",
+      "monitor64": "Monitor64",
+      "proxy": "PROXY64",
+      "scan": "Network scan"
+    },
+    "note": {
+      "self": "this node",
+      "router": "Router (gateway)",
+      "conflict": "several MAC addresses claim this IP"
+    },
+    "col": {
+      "ip": "IP address",
+      "name": "Name",
+      "mac": "MAC address",
+      "kind": "Type",
+      "sources": "Known from",
+      "seen": "Last seen",
+      "state": "State"
+    },
+    "list": {
+      "title": "Address list",
+      "all": "All",
+      "fixed": "Fixed",
+      "conflicts": "Conflicts",
+      "search": "IP, name or MAC …",
+      "count": "{n} of {total} entries",
+      "empty": "No address known in this network yet. “Scan network” looks for devices.",
+      "no_match": "No entry matches the filter."
+    },
+    "addr": {
+      "new": "Reserve address",
+      "edit": "Edit address",
+      "adopt": "Add to IPAM64",
+      "delete": "Delete entry",
+      "delete_confirm": "Really delete this entry?",
+      "hint": "For devices with a manually configured address. Fixed addresses handed out by the DHCP server are created under DNS64 › DHCP."
+    },
+    "scan": {
+      "button": "Scan network",
+      "hint": "Queries every address of the network via ARP (one small UDP packet per address, no port probing).",
+      "auto": "Scan automatically",
+      "off": "off",
+      "every": "every {n} min",
+      "never": "No network scan yet.",
+      "last": "Last network scan {ago}."
+    },
+    "flash": {
+      "network_saved": "Network saved.",
+      "network_deleted": "Network deleted.",
+      "address_saved": "Address saved.",
+      "address_deleted": "Entry deleted.",
+      "scanned": "Network scan finished: {n} devices answered.",
+      "autoscan_saved": "Automatic network scan saved."
+    },
+    "err": {
+      "subnet": "The network is invalid (example: 192.168.1.0/24).",
+      "prefix": "Networks from /20 to /30 are allowed.",
+      "overlap": "The network overlaps an existing network.",
+      "name": "Name or comment is invalid or too long.",
+      "iface": "The interface is invalid.",
+      "vlan": "VLAN must be between 1 and 4094.",
+      "router": "The router is not inside the network.",
+      "range": "The DHCP range is invalid or not inside the network.",
+      "ip": "The IP address is invalid.",
+      "no_net": "The address is in no known network.",
+      "mac": "The MAC address is invalid (example: aa:bb:cc:dd:ee:ff).",
+      "taken": "This address has already been entered.",
+      "not_found": "Not found.",
+      "not_attached": "This network is not directly attached to the node (e.g. Docker bridge or routed VLAN) – a network scan is not possible here.",
+      "internal": "Internal error, see logs."
+    },
+    "card": {
+      "networks": "Networks",
+      "used": "Used",
+      "conflicts": "Conflicts"
     }
   }
 }
