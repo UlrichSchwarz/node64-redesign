@@ -122,6 +122,10 @@ type overviewData struct {
 	Stale     []string     // Ziele anderer Module, die noch auf das alte Praefix zeigen
 	HasDyn    bool         // es gibt ein dynamisches Praefix
 	Sources   []SourceInfo // fremde DHCP-Server (sources.go)
+	Systems   []DHCPSystem // Auswahl der Anleitung
+	System    DHCPSystem   // gewaehltes System (?sys=)
+	SysOpen   bool         // Karte offen: System gewaehlt
+	NodeURL   string       // Adresse dieser Node fuer die Anleitung (wie im Browser aufgerufen)
 }
 
 func (m *Module) overview(r *http.Request) (*overviewData, error) {
@@ -153,6 +157,12 @@ func (m *Module) overview(r *http.Request) (*overviewData, error) {
 	}
 	if d.Sources, err = m.Sources(ctx); err != nil {
 		return nil, err
+	}
+	sys := r.URL.Query().Get("sys")
+	d.Systems, d.System, d.SysOpen = DHCPSystems, dhcpSystem(sys), sys != ""
+	d.NodeURL = "http://" + r.Host
+	if r.TLS != nil {
+		d.NodeURL = "https://" + r.Host
 	}
 	if d.Dyn = m.LastDynChange(ctx); d.Dyn != nil && m.now().Sub(d.Dyn.At) < 7*24*time.Hour {
 		d.Stale = m.StaleTargets(ctx, d.Dyn.From)

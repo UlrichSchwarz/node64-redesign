@@ -345,6 +345,29 @@ func TestSourcePages(t *testing.T) {
 	if code, body = get("/ipam64/address?ip=192.168.20.1"); code != 200 || !strings.Contains(body, `id="ipam-addr-server"`) || untranslated(body) {
 		t.Fatalf("address of the dhcp server: %d\n%s", code, body)
 	}
+	// Anleitung je System: Auswahl, Vorgabe pfSense, jedes System mit uebersetztem Hinweis, Adresse der Node eingesetzt
+	if code, body = get("/ipam64"); code != 200 || !strings.Contains(body, `id="ipam-sys"`) || !strings.Contains(body, `data-sys="pfsense"`) ||
+		!strings.Contains(body, `url = "`+srv.URL+`"`) || !strings.Contains(body, "noch kein Skript") {
+		t.Fatalf("guide default: %d\n%s", code, body)
+	}
+	for _, sys := range DHCPSystems {
+		code, body = get("/ipam64?sys=" + sys.Key)
+		if code != 200 || !strings.Contains(body, `data-sys="`+sys.Key+`"`) || !strings.Contains(body, `<option value="`+sys.Key+`" selected>`) || untranslated(body) {
+			t.Fatalf("guide %s: %d\n%s", sys.Key, code, body)
+		}
+		if hasScript := strings.Contains(body, `id="ipam-collector-pfsense"`); hasScript != (sys.Key == "pfsense") {
+			t.Fatalf("guide %s: script link %v", sys.Key, hasScript)
+		}
+		if api := strings.Contains(body, "curl -X PUT "+srv.URL+"/api/ipam64/sources/"); api != !sys.Ready {
+			t.Fatalf("guide %s: api example %v", sys.Key, api)
+		}
+	}
+	if code, body = get("/ipam64?sys=openwrt"); !strings.Contains(body, "/tmp/dhcp.leases") || !strings.Contains(body, "/api/ipam64/sources/openwrt") {
+		t.Fatalf("guide openwrt: %d", code)
+	}
+	if code, body = get("/ipam64?sys=gibtsnicht"); code != 200 || !strings.Contains(body, `data-sys="pfsense"`) {
+		t.Fatalf("guide unknown system: %d", code)
+	}
 	if code, body = get("/ipam64/collector/pfsense.php"); code != 200 || !strings.HasPrefix(body, "#!/usr/local/bin/php") {
 		t.Fatalf("collector: %d", code)
 	}

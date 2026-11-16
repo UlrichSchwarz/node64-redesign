@@ -39,6 +39,38 @@ var (
 	sourceRe = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{0,31}$`)
 )
 
+// DHCPSystem ist ein System, das einen DHCP-Server betreiben kann (Auswahl der Anleitung in der Uebersicht).
+type DHCPSystem struct {
+	Key   string
+	Name  string // leer: Text unter ipam64.sources.sys_other
+	Ready bool   // es gibt ein fertiges Skript (collectors/)
+}
+
+// DHCPSystems: Reihenfolge der Auswahl; das erste ist die Vorgabe. Hinweise je System unter ipam64.sources.sys.<Key>.
+var DHCPSystems = []DHCPSystem{
+	{"pfsense", "pfSense (Kea)", true},
+	{"opnsense", "OPNsense", false},
+	{"openwrt", "OpenWrt (dnsmasq)", false},
+	{"pihole", "Pi-hole (dnsmasq)", false},
+	{"fritzbox", "FRITZ!Box", false},
+	{"mikrotik", "MikroTik RouterOS", false},
+	{"unifi", "UniFi", false},
+	{"kea", "Kea (Linux)", false},
+	{"iscdhcp", "ISC dhcpd (Linux)", false},
+	{"windows", "Windows Server", false},
+	{"other", "", false},
+}
+
+// dhcpSystem sucht ein System ueber seinen Schluessel (unbekannt = Vorgabe).
+func dhcpSystem(key string) DHCPSystem {
+	for _, s := range DHCPSystems {
+		if s.Key == key {
+			return s
+		}
+	}
+	return DHCPSystems[0]
+}
+
 // FlexTime liest einen Zeitpunkt als Unix-Sekunden (Zahl) oder RFC 3339 (Text); 0, "" und null = unbekannt.
 type FlexTime struct{ time.Time }
 

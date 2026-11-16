@@ -102,7 +102,7 @@
 </details>
 {{end}}
 
-<details class="card mt-3" id="ipam-sources"{{if $d.Sources}} open{{end}}>
+<details class="card mt-3" id="ipam-sources"{{if or $d.Sources $d.SysOpen}} open{{end}}>
 	<summary class="card-header small"><i class="bi bi-router text-primary"></i> {{.T "ipam64.sources.title"}}{{if $d.Sources}} <span class="badge text-bg-light border">{{len $d.Sources}}</span>{{end}}</summary>
 	{{if $d.Sources}}
 	<div class="table-responsive">
@@ -130,16 +130,37 @@
 	{{end}}
 	<div class="card-body small">
 		<p class="mb-2">{{.T "ipam64.sources.intro"}}</p>
-		<p class="mb-1 fw-semibold">{{.T "ipam64.sources.pfsense_title"}}</p>
+		<form method="get" action="/ipam64#ipam-sources" class="d-flex flex-wrap align-items-center gap-2 mb-2">
+			<label class="fw-semibold" for="ipam-sys">{{.T "ipam64.sources.system"}}</label>
+			<select class="form-select form-select-sm w-auto" id="ipam-sys" name="sys" data-autosubmit>
+				{{range $d.Systems}}<option value="{{.Key}}"{{if eq .Key $d.System.Key}} selected{{end}}>{{if .Name}}{{.Name}}{{else}}{{$.T "ipam64.sources.sys_other"}}{{end}}{{if not .Ready}}{{if .Name}} – {{$.T "ipam64.sources.no_script"}}{{end}}{{end}}</option>{{end}}
+			</select>
+			<noscript><button class="btn btn-sm btn-outline-secondary" type="submit">{{.T "ipam64.sources.show"}}</button></noscript>
+		</form>
+		<div id="ipam-sys-guide" data-sys="{{$d.System.Key}}">
+		{{if eq $d.System.Key "pfsense"}}
 		<ol class="mb-2">
 			<li>{{.T "ipam64.sources.pf1"}} <a href="/api/docs">{{.T "nav.api"}}</a></li>
 			<li><a href="/ipam64/collector/pfsense.php" id="ipam-collector-pfsense"><i class="bi bi-download"></i> {{.T "ipam64.sources.pf2_link"}}</a> {{.T "ipam64.sources.pf2"}}</li>
-			<li>{{.T "ipam64.sources.pf3"}}<pre class="mb-1 mt-1"><code>url = "http://&lt;node64&gt;:8080"
+			<li>{{.T "ipam64.sources.pf3"}}<pre class="mb-1 mt-1"><code>url = "{{$d.NodeURL}}"
 key = "node64_..."</code></pre></li>
-			<li>{{.T "ipam64.sources.pf4"}} <code>php /root/node64-ipam.php -v</code></li>
+			<li>{{.T "ipam64.sources.pf4"}} <code>php /root/node64-ipam.php -n</code> {{.T "ipam64.sources.pf4_send"}} <code>php /root/node64-ipam.php -v</code></li>
 			<li>{{.T "ipam64.sources.pf5"}} <code>/usr/local/bin/php /root/node64-ipam.php</code></li>
 		</ol>
-		<p class="mb-0 text-body-secondary">{{.T "ipam64.sources.other"}} <code>PUT /api/ipam64/sources/{name}</code></p>
+		<p class="mb-0 text-body-secondary">{{.T "ipam64.sources.pf_note"}}</p>
+		{{else}}
+		{{if ne $d.System.Key "other"}}<p class="mb-2"><span class="badge text-bg-warning">{{.T "ipam64.sources.no_script"}}</span> {{.T (print "ipam64.sources.sys." $d.System.Key)}}</p>{{end}}
+		<p class="mb-1">{{.T "ipam64.sources.api_intro"}}</p>
+		<pre class="mb-2"><code>curl -X PUT {{$d.NodeURL}}/api/ipam64/sources/{{if eq $d.System.Key "other"}}router{{else}}{{$d.System.Key}}{{end}} \
+  -H "Authorization: Bearer node64_..." -H "Content-Type: application/json" \
+  -d '{"label": "{{if $d.System.Name}}{{$d.System.Name}}{{else}}Router{{end}}",
+       "networks": [{"subnet": "192.168.1.0/24", "router": "192.168.1.1", "server": "192.168.1.1",
+                     "range_start": "192.168.1.100", "range_end": "192.168.1.199"}],
+       "reservations": [{"ip": "192.168.1.10", "mac": "02:64:03:00:00:0a", "name": "nas"}],
+       "leases": [{"ip": "192.168.1.101", "mac": "02:64:03:00:00:65", "name": "notebook", "expires": 1794817089}]}'</code></pre>
+		<p class="mb-0 text-body-secondary">{{.T "ipam64.sources.api_note"}} <a href="/api/docs">{{.T "nav.api"}}</a></p>
+		{{end}}
+		</div>
 	</div>
 </details>
 {{end}}
