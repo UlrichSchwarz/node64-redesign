@@ -371,6 +371,38 @@ func TestSourcePages(t *testing.T) {
 	if code, body = get("/ipam64?sys=gibtsnicht"); code != 200 || !strings.Contains(body, `data-sys="pfsense"`) {
 		t.Fatalf("guide unknown system: %d", code)
 	}
+	// Ereignisse: zweite Meldung mit einer neuen Vergabe, Seite, Filter, Adress-Seite, API
+	put2 := strings.Replace(put, `"leases":[`, `"leases":[{"ip":"192.168.20.77","mac":"02:64:14:00:00:4d","name":"neu<b>es","expires":4102444800},`, 1)
+	if code, body = api("PUT", "/api/ipam64/sources/pfsense", put2, key); code != 200 || !strings.Contains(body, `"events":1`) {
+		t.Fatalf("second report: %d %s", code, body)
+	}
+	code, body = get("/ipam64/events")
+	for _, want := range []string{`id="ipam-events"`, "Neue Vergabe", "Quelle meldet erstmals", `href="/ipam64/address?ip=192.168.20.77"`, "neu&lt;b&gt;es", "pf&lt;i&gt;Sense"} {
+		if code != 200 || !strings.Contains(body, want) {
+			t.Fatalf("events page: %d, missing %q\n%s", code, want, body)
+		}
+	}
+	if untranslated(body) || strings.Contains(body, "neu<b>es") {
+		t.Fatalf("events page: untranslated key or unescaped name\n%s", body)
+	}
+	if code, body = get("/ipam64/events?kind=lease_new&p=192.168.20.0/24"); code != 200 || strings.Contains(body, "Quelle meldet erstmals</span>") || !strings.Contains(body, "192.168.20.77") || untranslated(body) {
+		t.Fatalf("events filter: %d\n%s", code, body)
+	}
+	if code, body = get("/ipam64/events?kind=net_gone"); code != 200 || !strings.Contains(body, `id="ipam-events-empty"`) || untranslated(body) {
+		t.Fatalf("events empty: %d", code)
+	}
+	if code, body = get("/ipam64/address?ip=192.168.20.77"); code != 200 || !strings.Contains(body, `id="ipam-addr-events"`) || untranslated(body) {
+		t.Fatalf("events on address page: %d\n%s", code, body)
+	}
+	if code, body = get("/ipam64/prefix?p=192.168.20.0/24"); code != 200 || !strings.Contains(body, `href="/ipam64/events?p=192.168.20.0`) {
+		t.Fatalf("events link on prefix page: %d", code)
+	}
+	if code, body = api("GET", "/api/ipam64/events?kind=lease_new", "", key); code != 200 || !strings.Contains(body, `"total":1`) || !strings.Contains(body, `"ip":"192.168.20.77"`) {
+		t.Fatalf("events api: %d %s", code, body)
+	}
+	if code, _ = api("GET", "/api/ipam64/events?prefix=kaputt", "", key); code != http.StatusBadRequest {
+		t.Fatalf("events api bad prefix: %d", code)
+	}
 	if code, body = get("/ipam64/collector/pfsense.pkg"); code != 200 || !strings.HasPrefix(body, "\x28\xb5\x2f\xfd") {
 		t.Fatalf("package download: %d", code)
 	}

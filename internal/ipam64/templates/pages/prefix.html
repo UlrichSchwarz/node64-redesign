@@ -12,6 +12,7 @@
 			<input type="hidden" name="_csrf" value="{{.CSRF}}"><input type="hidden" name="prefix" value="{{$n.CIDR}}">
 			<button class="btn btn-sm btn-outline-secondary" type="submit" id="ipam-scan"{{if $d.Scan.Running}} disabled{{end}} title="{{.T "ipam64.scan.hint"}}"><i class="bi bi-radar"></i> {{if $d.Scan.Running}}{{.T "ipam64.scan.running"}}{{else}}{{.T "ipam64.scan.button"}}{{end}}</button>
 		</form>{{end}}
+		<a class="btn btn-sm btn-outline-secondary" href="/ipam64/events?p={{$n.CIDR}}" id="ipam-events-link"><i class="bi bi-clock-history"></i> {{.T "ipam64.events.title"}}</a>
 		<a class="btn btn-sm btn-outline-secondary" href="/ipam64/export.csv?p={{$n.CIDR}}"><i class="bi bi-download"></i> {{.T "ipam64.export"}}</a>
 		<button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#ipam-edit" aria-expanded="{{if eq $d.ErrForm "prefix"}}true{{else}}false{{end}}" aria-controls="ipam-edit"><i class="bi bi-pencil"></i> {{.T "ipam64.edit"}}</button>
 	</div>

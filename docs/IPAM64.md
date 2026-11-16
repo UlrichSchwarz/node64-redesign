@@ -94,6 +94,11 @@ Nachbartabelle. Das Gerät kann seinen Stand deshalb melden; IPAM64 zeigt ihn an
 - **Aktiver DHCP-Server**: Nennt die Quelle ihre eigene Adresse (`server` je Netz), ist diese im Raster mit kräftigem
   Rand und Punkt, in der Liste und an der Adresse mit „aktiver DHCP-Server“ gekennzeichnet (API: `dhcp_server` an der
   Adresse, `dhcp_server_address` am Präfix) – solange die Quelle meldet, also bis eine Stunde nach der letzten Meldung.
+- **Ereignisse**: Jede Meldung wird mit der vorigen verglichen. *IPAM64 → Ereignisse* (und `GET /api/ipam64/events`)
+  zeigt neue Vergaben, abgelaufene (Zeit = Ablauf) und zurückgegebene Vergaben, Gerätewechsel an einer Adresse, feste
+  Zuweisungen und Netze. Eine Verlängerung ist kein Ereignis; die Genauigkeit entspricht dem Meldeabstand. Die erste
+  Meldung einer Quelle zählt nur als solche. 90 Tage, höchstens 5000 Einträge, je Node. Vergaben des DHCP-Servers von
+  DNS64 stehen dort im eigenen Protokoll, nicht hier.
 - **Grenzen**: DNS64 schreibt in diesen Netzen keine Reservierungen; der Schalter *Feste Zuweisung* ist dort aus.
   Bedient DNS64 dasselbe Netz, gilt dessen Adressbereich. Die Meldungen bleiben je Node (kein Cluster-Abgleich). Bleibt
   eine Quelle länger als eine Stunde stumm, zeigt die Übersicht „keine Meldung“.

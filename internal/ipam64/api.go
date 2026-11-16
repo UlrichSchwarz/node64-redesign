@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/netip"
 	"strconv"
 	"strings"
 	"sync"
@@ -41,6 +42,7 @@ func (m *Module) apiRoutes(mux *http.ServeMux, g module.Guards) {
 	mux.Handle("GET /api/ipam64/conflicts", api(m.apiConflicts))
 	mux.Handle("POST /api/ipam64/scan", api(m.apiScan))
 	mux.Handle("GET /api/ipam64/sources", api(m.apiSources))
+	mux.Handle("GET /api/ipam64/events", api(m.apiEvents))
 	mux.Handle("PUT /api/ipam64/sources/{name}", api(m.apiSourcePut))
 	mux.Handle("DELETE /api/ipam64/sources/{name}", api(m.apiSourceDelete))
 }
@@ -476,4 +478,37 @@ func (m *Module) apiSourceDelete(w http.ResponseWriter, r *http.Request) {
 	}
 	m.g.Audit(r, "ipam64.source.delete", name, "")
 	writeJSON(w, http.StatusOK, map[string]string{"deleted": name})
+}
+
+// apiEvents: Ereignisse der fremden DHCP-Server, neueste zuerst (?prefix=, ?ip=, ?kind=, ?source=, ?q=, ?limit= bis 1000).
+func (m *Module) apiEvents(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	f := EventFilter{Kind: q.Get("kind"), Source: q.Get("source"), Query: q.Get("q")}
+	if v := q.Get("prefix"); v != "" {
+		p, err := netip.ParsePrefix(v)
+		if err != nil {
+			m.apiFail(w, ErrPrefix)
+			return
+		}
+		f.Prefix = p.Masked()
+	}
+	if v := q.Get("ip"); v != "" {
+		ip, err := netip.ParseAddr(v)
+		if err != nil {
+			m.apiFail(w, ErrIP)
+			return
+		}
+		f.IP = ip.String()
+	}
+	list, err := m.Events(r.Context(), f)
+	if err != nil {
+		m.apiFail(w, err)
+		return
+	}
+	limit := 200
+	if n, err := strconv.Atoi(q.Get("limit")); err == nil && n > 0 {
+		limit = min(n, 1000)
+	}
+	total := len(list)
+	writeJSON(w, http.StatusOK, map[string]any{"events": list[:min(total, limit)], "total": total})
 }

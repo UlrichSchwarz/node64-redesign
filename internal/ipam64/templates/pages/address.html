@@ -94,6 +94,14 @@
 		{{else if $d.Net.ExtDHCP}}
 		<div class="card small" id="ipam-ext-dhcp"><div class="card-body d-flex gap-2"><i class="bi bi-router text-primary"></i><div>{{if $d.Net.PoolStart}}{{.T "ipam64.addr.pool_hint" "from" $d.Net.PoolStart "to" $d.Net.PoolEnd}} {{end}}<span class="badge text-bg-light border">{{$d.Net.ExtDHCP}}</span></div></div></div>
 		{{end}}{{end}}
+		{{if $d.Events}}
+		<div class="card small mt-3" id="ipam-addr-events">
+			<div class="card-header d-flex align-items-center"><span class="me-auto"><i class="bi bi-clock-history text-primary"></i> {{.T "ipam64.events.title"}}</span><a href="/ipam64/events?ip={{(index $d.Events 0).IP}}">{{.T "ipam64.events.all"}}</a></div>
+			<ul class="list-group list-group-flush">
+				{{range $d.Events}}<li class="list-group-item d-flex justify-content-between gap-2"><span>{{$.T (print "ipam64.events.kind." .Kind)}}{{if .MAC}} <span class="font-monospace text-body-secondary">{{.MAC}}</span>{{end}}</span><span class="text-body-secondary text-nowrap" title="{{$.Time .Time}}">{{$.Ago .Time}}</span></li>{{end}}
+			</ul>
+		</div>
+		{{end}}
 	</div>
 </div>
 {{end}}

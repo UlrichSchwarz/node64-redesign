@@ -5938,6 +5938,34 @@
       "used": "Addresses used",
       "conflicts": "Conflicts"
     },
+    "events": {
+      "title": "Events",
+      "intro": "What changed on the external DHCP servers: new leases, ended leases, device changes, fixed assignments and networks. The node compares each report with the previous one; accuracy equals the report interval. 90 days, at most 5000 entries.",
+      "all": "All events",
+      "any": "All kinds",
+      "count": "{n} events",
+      "col_time": "Time",
+      "col_kind": "Event",
+      "col_source": "Source",
+      "before": "before {mac}",
+      "newer": "Newer",
+      "older": "Older",
+      "page": "Page {n} of {of}",
+      "empty": "No events yet. They appear from the second report of a DHCP server on.",
+      "no_match": "No event matches the filter.",
+      "kind": {
+        "source_new": "Source reports for the first time",
+        "lease_new": "New lease",
+        "lease_change": "Different device on the address",
+        "lease_expired": "Lease expired",
+        "lease_released": "Lease released",
+        "fixed_new": "Fixed assignment created",
+        "fixed_change": "Fixed assignment changed",
+        "fixed_gone": "Fixed assignment removed",
+        "net_new": "Network newly reported",
+        "net_gone": "Network no longer reported"
+      }
+    },
     "sources": {
       "title": "External DHCP servers",
       "intro": "If a router or firewall hands out the addresses (instead of DNS64), the device can report its networks, fixed assignments and leases to IPAM64. They then appear as a source in the address view; changes are still made on the device. Per node, not synced in the cluster.",

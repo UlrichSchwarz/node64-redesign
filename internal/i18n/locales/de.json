@@ -5938,6 +5938,34 @@
       "used": "Adressen belegt",
       "conflicts": "Konflikte"
     },
+    "events": {
+      "title": "Ereignisse",
+      "intro": "Was sich bei den fremden DHCP-Servern geändert hat: neue Vergaben, beendete Vergaben, Gerätewechsel, feste Zuweisungen und Netze. Die Node vergleicht dafür jede Meldung mit der vorigen; die Genauigkeit entspricht dem Meldeabstand. 90 Tage, höchstens 5000 Einträge.",
+      "all": "Alle Ereignisse",
+      "any": "Alle Arten",
+      "count": "{n} Ereignisse",
+      "col_time": "Zeit",
+      "col_kind": "Ereignis",
+      "col_source": "Quelle",
+      "before": "vorher {mac}",
+      "newer": "Neuere",
+      "older": "Ältere",
+      "page": "Seite {n} von {of}",
+      "empty": "Noch keine Ereignisse. Sie entstehen ab der zweiten Meldung eines DHCP-Servers.",
+      "no_match": "Kein Ereignis passt zum Filter.",
+      "kind": {
+        "source_new": "Quelle meldet erstmals",
+        "lease_new": "Neue Vergabe",
+        "lease_change": "Anderes Gerät an der Adresse",
+        "lease_expired": "Vergabe abgelaufen",
+        "lease_released": "Vergabe zurückgegeben",
+        "fixed_new": "Feste Zuweisung angelegt",
+        "fixed_change": "Feste Zuweisung geändert",
+        "fixed_gone": "Feste Zuweisung entfernt",
+        "net_new": "Netz neu gemeldet",
+        "net_gone": "Netz nicht mehr gemeldet"
+      }
+    },
     "sources": {
       "title": "Fremde DHCP-Server",
       "intro": "Vergibt ein Router oder eine Firewall die Adressen (statt DNS64), kann das Gerät seine Netze, festen Zuweisungen und Vergaben an IPAM64 melden. Sie erscheinen dann als Quelle in der Belegung; geändert wird weiter am Gerät. Je Node, nicht im Cluster abgeglichen.",

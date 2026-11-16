@@ -1,0 +1,52 @@
+{{define "content"}}
+{{$d := .Data}}
+<div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+	<h1 class="h4 mb-0 me-auto"><i class="bi bi-clock-history text-primary"></i> {{.T "ipam64.events.title"}}{{if $d.Prefix}} <span class="font-monospace text-body-secondary">{{$d.Prefix}}</span>{{end}}{{if $d.IP}} <span class="font-monospace text-body-secondary">{{$d.IP}}</span>{{end}}</h1>
+	{{if or $d.Prefix $d.IP}}<a class="btn btn-sm btn-outline-secondary" href="/ipam64/events" id="ipam-events-all">{{.T "ipam64.events.all"}}</a>{{end}}
+	{{if $d.Prefix}}<a class="btn btn-sm btn-outline-secondary" href="/ipam64/prefix?p={{$d.Prefix}}"><i class="bi bi-arrow-left"></i> {{$d.Prefix}}</a>{{else}}<a class="btn btn-sm btn-outline-secondary" href="/ipam64"><i class="bi bi-arrow-left"></i> {{.T "ipam64.title"}}</a>{{end}}
+</div>
+<p class="text-body-secondary small">{{.T "ipam64.events.intro"}}</p>
+
+<div class="card" id="ipam-events">
+	<div class="card-header d-flex flex-wrap align-items-center gap-2">
+		<span class="me-auto small">{{.T "ipam64.events.count" "n" $d.Total}}</span>
+		<form method="get" action="/ipam64/events" class="d-flex flex-wrap gap-1" role="search">
+			{{if $d.Prefix}}<input type="hidden" name="p" value="{{$d.Prefix}}">{{end}}
+			{{if $d.IP}}<input type="hidden" name="ip" value="{{$d.IP}}">{{end}}
+			<label class="visually-hidden" for="ipam-ev-kind">{{.T "ipam64.events.col_kind"}}</label>
+			<select class="form-select form-select-sm w-auto" id="ipam-ev-kind" name="kind" data-autosubmit>
+				<option value="">{{.T "ipam64.events.any"}}</option>
+				{{range $d.Kinds}}<option value="{{.}}"{{if eq . $d.Kind}} selected{{end}}>{{$.T (print "ipam64.events.kind." .)}}</option>{{end}}
+			</select>
+			<input class="form-control form-control-sm w-auto" type="search" name="q" value="{{$d.Query}}" placeholder="{{.T "ipam64.search"}}" aria-label="{{.T "common.search"}}">
+			<button class="btn btn-sm btn-outline-secondary" type="submit" aria-label="{{.T "common.search"}}"><i class="bi bi-search"></i></button>
+		</form>
+	</div>
+	{{if $d.Events}}
+	<div class="table-responsive">
+		<table class="table table-sm table-hover align-middle mb-0 small table-stack">
+			<thead><tr><th>{{.T "ipam64.events.col_time"}}</th><th>{{.T "ipam64.events.col_kind"}}</th><th>{{.T "ipam64.col.ip"}}</th><th>{{.T "ipam64.col.name"}}</th><th>{{.T "ipam64.col.mac"}}</th><th>{{.T "ipam64.events.col_source"}}</th></tr></thead>
+			<tbody>
+				{{range $d.Events}}
+				<tr>
+					<td data-label="{{$.T "ipam64.events.col_time"}}" class="text-nowrap"><span title="{{$.Ago .Time}}">{{$.Time .Time}}</span></td>
+					<td data-label="{{$.T "ipam64.events.col_kind"}}"><span class="badge {{if eq .Kind "lease_new"}}text-bg-success{{else if or (eq .Kind "lease_change") (eq .Kind "fixed_change")}}text-bg-warning{{else if or (eq .Kind "lease_expired") (eq .Kind "lease_released") (eq .Kind "fixed_gone") (eq .Kind "net_gone")}}text-bg-secondary{{else}}text-bg-light border{{end}}">{{$.T (print "ipam64.events.kind." .Kind)}}</span></td>
+					<td data-label="{{$.T "ipam64.col.ip"}}" class="font-monospace text-nowrap">{{if not .IP}}–{{else if or (eq .Kind "net_new") (eq .Kind "net_gone")}}<a href="/ipam64/prefix?p={{.IP}}">{{.IP}}</a>{{else}}<a href="/ipam64/address?ip={{.IP}}">{{.IP}}</a>{{end}}</td>
+					<td data-label="{{$.T "ipam64.col.name"}}">{{.Name}}</td>
+					<td data-label="{{$.T "ipam64.col.mac"}}" class="font-monospace">{{.MAC}}{{if .Detail}}<div class="text-body-secondary" style="font-family: var(--bs-body-font-family)">{{$.T "ipam64.events.before" "mac" .Detail}}</div>{{end}}</td>
+					<td data-label="{{$.T "ipam64.events.col_source"}}"><span class="badge text-bg-light border">{{.Label}}</span></td>
+				</tr>
+				{{end}}
+			</tbody>
+		</table>
+	</div>
+	{{if gt $d.Pages 1}}<div class="card-footer d-flex align-items-center gap-2 small">
+		{{if gt $d.Page 1}}<a class="btn btn-sm btn-outline-secondary" href="{{$d.URL "page" (print (add $d.Page -1))}}">{{.T "ipam64.events.newer"}}</a>{{end}}
+		<span class="text-body-secondary">{{.T "ipam64.events.page" "n" $d.Page "of" $d.Pages}}</span>
+		{{if lt $d.Page $d.Pages}}<a class="btn btn-sm btn-outline-secondary" href="{{$d.URL "page" (print (add $d.Page 1))}}">{{.T "ipam64.events.older"}}</a>{{end}}
+	</div>{{end}}
+	{{else}}
+	<div class="card-body small text-body-secondary" id="ipam-events-empty">{{if or $d.Kind $d.Query}}{{.T "ipam64.events.no_match"}}{{else}}{{.T "ipam64.events.empty"}}{{end}}</div>
+	{{end}}
+</div>
+{{end}}

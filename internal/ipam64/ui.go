@@ -51,6 +51,7 @@ func (m *Module) uiRoutes(mux *http.ServeMux, g module.Guards) {
 	mux.Handle("POST /ipam64/notify", page(m.postNotify))
 	mux.Handle("GET /ipam64/import", page(m.pageImport))
 	mux.Handle("POST /ipam64/import", page(m.postImport))
+	mux.Handle("GET /ipam64/events", page(m.pageEvents))
 	mux.Handle("POST /ipam64/source/delete", page(m.postSourceDelete))
 	mux.Handle("GET /ipam64/collector/pfsense.php", page(m.serveCollectorPfsense))
 	mux.Handle("GET /ipam64/collector/pfsense.pkg", page(m.servePfPkg))
@@ -197,6 +198,70 @@ func (m *Module) pageOverview(w http.ResponseWriter, r *http.Request) {
 			d.FormOpen, d.Form.Prefix, d.Form.Name = true, p, r.URL.Query().Get("name")
 		}
 	})
+}
+
+// ---- Ereignisse (events.go) ----
+
+const eventsPerPage = 100
+
+type eventsData struct {
+	Events []Event
+	Total  int
+	Page   int
+	Pages  int
+	Kinds  []string
+	Kind   string
+	Query  string
+	Prefix string // nur Ereignisse in diesem Praefix
+	IP     string // nur diese Adresse
+}
+
+// URL baut den Link der Seite mit geaenderten Parametern ("" entfernt).
+func (d *eventsData) URL(kv ...string) string {
+	q := url.Values{}
+	for k, v := range map[string]string{"p": d.Prefix, "ip": d.IP, "kind": d.Kind, "q": d.Query} {
+		if v != "" {
+			q.Set(k, v)
+		}
+	}
+	for i := 0; i+1 < len(kv); i += 2 {
+		if kv[i+1] == "" {
+			q.Del(kv[i])
+		} else {
+			q.Set(kv[i], kv[i+1])
+		}
+	}
+	if len(q) == 0 {
+		return "/ipam64/events"
+	}
+	return "/ipam64/events?" + q.Encode()
+}
+
+func (m *Module) pageEvents(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	d := &eventsData{Kinds: EventKinds, Query: strings.TrimSpace(q.Get("q")), Page: 1}
+	f := EventFilter{Query: d.Query}
+	if k := q.Get("kind"); slices.Contains(EventKinds, k) {
+		d.Kind, f.Kind = k, k
+	}
+	if p, err := netip.ParsePrefix(q.Get("p")); err == nil {
+		f.Prefix, d.Prefix = p.Masked(), p.Masked().String()
+	}
+	if ip, err := netip.ParseAddr(q.Get("ip")); err == nil {
+		f.IP, d.IP = ip.String(), ip.String()
+	}
+	list, err := m.Events(r.Context(), f)
+	if err != nil {
+		m.fail(w, r, err)
+		return
+	}
+	d.Total = len(list)
+	d.Pages = max(1, (len(list)+eventsPerPage-1)/eventsPerPage)
+	if n, _ := strconv.Atoi(q.Get("page")); n > 1 && n <= d.Pages {
+		d.Page = n
+	}
+	d.Events = list[min(len(list), (d.Page-1)*eventsPerPage):min(len(list), d.Page*eventsPerPage)]
+	m.g.Render(w, r, http.StatusOK, "ipam64/events", "ipam64.events.title", d)
 }
 
 // collectorPfsense ist das Skript, das auf einer pfSense laeuft und ihren DHCP-Stand meldet (Download auf der Seite).
@@ -618,6 +683,7 @@ type addressData struct {
 	DNS64   bool     // DNS64 laeuft
 	Effects []Effect // Wirkung in DNS64 (gespeicherter Stand, mit Abgleich)
 	ZoneErr bool     // DNS an, aber keine Zone
+	Events  []Event  // letzte Ereignisse dieser Adresse (fremde DHCP-Server)
 }
 
 // Crumb ist die letzte Stufe der Brotkrumen (Adresse).
@@ -634,6 +700,9 @@ func (m *Module) addressPage(r *http.Request, ip string) (*addressData, error) {
 		return nil, err
 	}
 	d := &addressData{Net: snap.NetOf(a), Entry: snap.Entry(a), Roles: addrRoles, DNS64: m.DNS64Running()}
+	if ev, err := m.Events(ctx, EventFilter{IP: a.String()}); err == nil {
+		d.Events = ev[:min(len(ev), 8)]
+	}
 	if d.Net == nil {
 		return nil, ErrNoNet
 	}

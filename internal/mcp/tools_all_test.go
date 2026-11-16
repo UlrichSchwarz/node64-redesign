@@ -315,6 +315,7 @@ func (r *recBackend) Get(ctx context.Context, id Identity, path string, q url.Va
 
 // notCovered: GET-Routen der API, die MCP bewusst nicht liest (mit Grund).
 var notCovered = map[string]string{
+	"/api/ipam64/events":             "IPAM64: Ereignisprotokoll der DHCP-Server – Verlauf, in der Oberflaeche",
 	"/api/backup":                    "Backup – nie ueber MCP",
 	"/api/keys":                      "API-Keys – nie ueber MCP",
 	"/api/users":                     "Benutzer – nie ueber MCP",

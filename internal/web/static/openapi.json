@@ -34839,6 +34839,136 @@
         }
       }
     },
+    "/ipam64/events": {
+      "get": {
+        "tags": [
+          "IPAM64"
+        ],
+        "summary": "Ereignisse der fremden DHCP-Server",
+        "description": "Was sich zwischen zwei Meldungen einer Quelle geändert hat, neueste zuerst: `lease_new`, `lease_change` (anderes Gerät, `detail` = vorige MAC), `lease_expired` (Zeit = Ablauf), `lease_released`, `fixed_new`, `fixed_change`, `fixed_gone`, `net_new`, `net_gone`, `source_new`. Eine Verlängerung ist kein Ereignis; die Genauigkeit entspricht dem Meldeabstand. 90 Tage, höchstens 5000 Einträge, je Node.",
+        "parameters": [
+          {
+            "name": "prefix",
+            "in": "query",
+            "required": false,
+            "description": "nur Adressen in diesem Präfix",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ip",
+            "in": "query",
+            "required": false,
+            "description": "nur diese Adresse",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "description": "nur diese Art",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "description": "nur diese Quelle (Kennung)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "description": "Teil von Adresse, Name oder MAC",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "höchstens so viele (Standard 200, bis 1000)",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer",
+                      "description": "Treffer insgesamt"
+                    },
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "time": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "source": {
+                            "type": "string"
+                          },
+                          "source_label": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "ip": {
+                            "type": "string",
+                            "description": "Adresse bzw. bei net_* das Netz"
+                          },
+                          "mac": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "detail": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Präfix oder Adresse ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/ipam64/sources": {
       "get": {
         "tags": [

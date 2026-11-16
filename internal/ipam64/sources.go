@@ -136,6 +136,7 @@ type SourceResult struct {
 	Networks     int      `json:"networks"`
 	Reservations int      `json:"reservations"`
 	Leases       int      `json:"leases"`
+	Events       int      `json:"events"`                  // dabei entstandene Ereignisse (neue Vergabe, Vergabe beendet ...)
 	Skipped      int      `json:"skipped"`                 // uebersprungene Eintraege (ungueltig, kein IPv4 ...)
 	SkippedNotes []string `json:"skipped_notes,omitempty"` // die ersten Gruende
 }
@@ -297,8 +298,42 @@ func (m *Module) UpdateSource(ctx context.Context, name string, in SourceUpdate)
 	}
 	defer tx.Rollback()
 	label := cut(in.Label, maxName)
+	// Ereignisse: alter Stand gegen den neuen (events.go); die erste Meldung einer Quelle zaehlt nur als solche
+	now := m.now()
+	var prev int64
+	_ = tx.QueryRowContext(ctx, `SELECT updated_at FROM ipam_sources WHERE name = ?`, name).Scan(&prev)
+	var events []Event
+	if exists == 0 {
+		events = []Event{{Time: now, Kind: EvSourceNew}}
+	} else {
+		oldLease, oldFixed, oldNets, err := sourceState(ctx, tx, name)
+		if err != nil {
+			return res, err
+		}
+		newLease, newFixed := map[string]leaseState{}, map[string]leaseState{}
+		for _, l := range leases {
+			if l.kind == KindFixed {
+				newFixed[l.ip] = leaseState{l.mac, l.name, 0}
+			} else {
+				newLease[l.ip] = leaseState{l.mac, l.name, l.expires}
+			}
+		}
+		newNets := make([]string, 0, len(nets))
+		for _, n := range nets {
+			newNets = append(newNets, n.Subnet)
+		}
+		events = diffEvents(prev, now.Unix(), oldLease, newLease, oldFixed, newFixed, oldNets, newNets)
+	}
+	evLabel := label
+	if evLabel == "" {
+		evLabel = name
+	}
+	if err := writeEvents(ctx, tx, name, evLabel, events, now); err != nil {
+		return res, err
+	}
+	res.Events = len(events)
 	if _, err := tx.ExecContext(ctx, `INSERT INTO ipam_sources (name, label, updated_at) VALUES (?, ?, ?)
-		ON CONFLICT (name) DO UPDATE SET label = excluded.label, updated_at = excluded.updated_at`, name, label, m.now().Unix()); err != nil {
+		ON CONFLICT (name) DO UPDATE SET label = excluded.label, updated_at = excluded.updated_at`, name, label, now.Unix()); err != nil {
 		return res, err
 	}
 	for _, q := range []string{`DELETE FROM ipam_source_networks WHERE source = ?`, `DELETE FROM ipam_source_leases WHERE source = ?`} {
