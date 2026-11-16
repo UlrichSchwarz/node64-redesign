@@ -217,7 +217,8 @@ type Cell struct {
 	Last  string // letzte Stelle(n) als Beschriftung
 	Class string // dhcp | fixed | static | conflict | pool | reserved | free | na
 	Name  string
-	Match bool // Treffer von Filter/Suche der Liste
+	DHCP  string // auf der Adresse laeuft ein aktiver DHCP-Server (Anzeige, z. B. "pfSense")
+	Match bool   // Treffer von Filter/Suche der Liste
 }
 
 // MapCell ist ein Feld der Blockuebersicht grosser Praefixe (ein Teilnetz, hoechstens 256 Felder).
@@ -412,7 +413,7 @@ func (s *Snapshot) grid(n *Net, block int) [][]Cell {
 		case n.Prefix.Bits() <= 30 && (ip == n.Prefix.Addr() || ip == last):
 			c.Class = "na"
 		case e != nil:
-			c.Class, c.Name = e.Kind, e.Name
+			c.Class, c.Name, c.DHCP = e.Kind, e.Name, e.DHCPServer
 		case s.NetOf(ip) != n:
 			c.Class = "na" // in einem Kind-Praefix
 		case n.inPool(ip):

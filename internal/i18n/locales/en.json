@@ -5853,7 +5853,8 @@
       "pool": "free in the DHCP range",
       "reserved": "reserved",
       "free": "free",
-      "na": "not assignable"
+      "na": "not assignable",
+      "server": "active DHCP server"
     },
     "filter": {
       "all": "All"
@@ -5929,6 +5930,7 @@
       "conflict_lease": "Conflict – lease versus fixed address",
       "self": "this node",
       "router": "Router (gateway)",
+      "dhcp_server": "DHCP server",
       "conflict": "Conflict – several MAC addresses"
     },
     "card": {

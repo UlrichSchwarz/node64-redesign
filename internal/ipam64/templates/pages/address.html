@@ -82,6 +82,7 @@
 				<li class="list-group-item d-flex justify-content-between gap-2"><span>{{.T "ipam64.col.state"}}</span><span>{{.T (print "ipam64.state." $e.State)}}{{if not $e.Seen.IsZero}} · {{.Ago $e.Seen}}{{end}}</span></li>
 				{{if or $e.MAC $e.MACs}}<li class="list-group-item d-flex justify-content-between gap-2"><span>{{.T "ipam64.col.mac"}}</span><span class="font-monospace">{{if $e.MACs}}{{join $e.MACs ", "}}{{else}}{{$e.MAC}}{{end}}</span></li>{{end}}
 				{{if $e.Name}}<li class="list-group-item d-flex justify-content-between gap-2"><span>{{.T "ipam64.col.name"}}</span><span>{{$e.Name}}</span></li>{{end}}
+				{{if $e.DHCPServer}}<li class="list-group-item d-flex justify-content-between gap-2" id="ipam-addr-server"><span><i class="bi bi-router text-primary"></i> {{.T "ipam64.cell.server"}}</span><span class="badge text-bg-warning">{{$e.DHCPServer}}</span></li>{{end}}
 				<li class="list-group-item"><div class="mb-1">{{.T "ipam64.col.sources"}}</div>{{range $e.Sources}}<span class="badge text-bg-light border me-1">{{with $e.ExtLabel .}}{{.}}{{else}}{{$.T (print "ipam64.src." .)}}{{end}}</span>{{end}}</li>
 			</ul>
 			{{else}}

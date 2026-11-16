@@ -31,7 +31,7 @@
  *   -v  Ergebnis ausgeben (ohne -v bleibt das Skript bei Erfolg still, damit Cron keine Mails schickt)
  */
 
-const N64_VERSION = '1';
+const N64_VERSION = '2';
 
 function n64_fail(string $msg): void
 {
@@ -85,6 +85,7 @@ function n64_read_config(string $path): array
             'name' => $name !== '' ? $name : strtoupper((string)$ifname),
             'interface' => trim((string)$if->if),
         ];
+        $net['server'] = $ip; // Kea antwortet mit der Adresse der Schnittstelle
         $gw = trim((string)$d->gateway);
         $net['router'] = n64_ip4($gw) ? $gw : ($gw === 'none' ? '' : $ip);
         $from = trim((string)$d->range->from);
@@ -284,6 +285,9 @@ if ($dry) {
 }
 
 [$code, $body] = n64_send($ini, $source, $json);
+if ($code === 400 && strpos($body, 'unknown field') !== false) {
+    n64_fail('Node64 ist aelter als dieses Skript (kennt ein Feld der Meldung nicht) - zuerst Node64 aktualisieren: ' . substr(trim($body), 0, 200));
+}
 if ($code !== 200) {
     n64_fail("Node64 antwortet mit $code: " . substr(trim($body), 0, 300));
 }

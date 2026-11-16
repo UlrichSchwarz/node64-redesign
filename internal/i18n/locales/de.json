@@ -5853,7 +5853,8 @@
       "pool": "frei im DHCP-Adressbereich",
       "reserved": "reserviert",
       "free": "frei",
-      "na": "nicht vergebbar"
+      "na": "nicht vergebbar",
+      "server": "aktiver DHCP-Server"
     },
     "filter": {
       "all": "Alle"
@@ -5929,6 +5930,7 @@
       "conflict_lease": "Konflikt – Lease gegen feste Adresse",
       "self": "diese Node",
       "router": "Router (Gateway)",
+      "dhcp_server": "DHCP-Server",
       "conflict": "Konflikt – mehrere MAC-Adressen"
     },
     "card": {

@@ -85,6 +85,7 @@ type SourceNetwork struct {
 	Router     string `json:"router"`
 	RangeStart string `json:"range_start"`
 	RangeEnd   string `json:"range_end"`
+	Server     string `json:"server"` // Adresse des DHCP-Servers in diesem Netz (leer = unbekannt)
 }
 
 // SourceLease ist eine feste Adresse bzw. eine Vergabe.
@@ -162,7 +163,11 @@ func normalizeSourceNet(n SourceNetwork) (SourceNetwork, error) {
 	if !ok1 || !ok2 || a.IsValid() != b.IsValid() || (a.IsValid() && b.Less(a)) {
 		return n, ErrRange
 	}
-	out.Router, out.RangeStart, out.RangeEnd = addrText(r), addrText(a), addrText(b)
+	srv, ok := in(n.Server)
+	if !ok {
+		return n, ErrIP
+	}
+	out.Router, out.RangeStart, out.RangeEnd, out.Server = addrText(r), addrText(a), addrText(b), addrText(srv)
 	return out, nil
 }
 
@@ -270,8 +275,8 @@ func (m *Module) UpdateSource(ctx context.Context, name string, in SourceUpdate)
 		}
 	}
 	for _, n := range nets {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO ipam_source_networks (source, subnet, name, iface, router, range_start, range_end) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-			name, n.Subnet, n.Name, n.Iface, n.Router, n.RangeStart, n.RangeEnd); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO ipam_source_networks (source, subnet, name, iface, router, range_start, range_end, server) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+			name, n.Subnet, n.Name, n.Iface, n.Router, n.RangeStart, n.RangeEnd, n.Server); err != nil {
 			return res, err
 		}
 	}
@@ -346,6 +351,8 @@ func (m *Module) Sources(ctx context.Context) ([]SourceInfo, error) {
 // extSource ist der Stand einer fremden Quelle fuer die Zusammenfuehrung.
 type extSource struct {
 	name, label string
+	updated     time.Time // letzte Meldung
+	stale       bool      // laenger als srcStaleAfter keine Meldung: der Server gilt nicht mehr als aktiv
 	hints       []NetHint
 	sightings   []Sighting
 }
@@ -353,7 +360,8 @@ type extSource struct {
 // extSources liest alle fremden Quellen (ohne abgelaufene Vergaben), nach Kennung sortiert.
 func (m *Module) extSources(ctx context.Context) ([]extSource, error) {
 	db := m.core.Reader()
-	rows, err := db.QueryContext(ctx, `SELECT name, label FROM ipam_sources ORDER BY name`)
+	now := m.now()
+	rows, err := db.QueryContext(ctx, `SELECT name, label, updated_at FROM ipam_sources ORDER BY name`)
 	if err != nil {
 		return nil, err
 	}
@@ -361,10 +369,13 @@ func (m *Module) extSources(ctx context.Context) ([]extSource, error) {
 	idx := map[string]int{}
 	for rows.Next() {
 		var s extSource
-		if err := rows.Scan(&s.name, &s.label); err != nil {
+		var ts int64
+		if err := rows.Scan(&s.name, &s.label, &ts); err != nil {
 			rows.Close()
 			return nil, err
 		}
+		s.updated = time.Unix(ts, 0)
+		s.stale = now.Sub(s.updated) > srcStaleAfter
 		if s.label == "" {
 			s.label = s.name
 		}
@@ -374,14 +385,14 @@ func (m *Module) extSources(ctx context.Context) ([]extSource, error) {
 	if err := closeRows(rows); err != nil || len(out) == 0 {
 		return out, err
 	}
-	rows, err = db.QueryContext(ctx, `SELECT source, subnet, name, iface, router, range_start, range_end FROM ipam_source_networks ORDER BY source, subnet`)
+	rows, err = db.QueryContext(ctx, `SELECT source, subnet, name, iface, router, range_start, range_end, server FROM ipam_source_networks ORDER BY source, subnet`)
 	if err != nil {
 		return nil, err
 	}
 	for rows.Next() {
-		var src, subnet, router, a, b string
+		var src, subnet, router, a, b, server string
 		var h NetHint
-		if err := rows.Scan(&src, &subnet, &h.Name, &h.Iface, &router, &a, &b); err != nil {
+		if err := rows.Scan(&src, &subnet, &h.Name, &h.Iface, &router, &a, &b, &server); err != nil {
 			rows.Close()
 			return nil, err
 		}
@@ -397,12 +408,20 @@ func (m *Module) extSources(ctx context.Context) ([]extSource, error) {
 		if h.Router.IsValid() { // das Gateway ist belegt, auch wenn es keine Lease hat ("naechste freie Adresse")
 			out[i].sightings = append(out[i].sightings, Sighting{Addr: h.Router.String()})
 		}
+		if srv, err := netip.ParseAddr(server); err == nil { // der DHCP-Server selbst: belegt und, solange er meldet, als aktiv gekennzeichnet
+			sg := Sighting{Addr: srv.String(), Seen: out[i].updated} // die Meldung kommt vom Server selbst: zuletzt gesehen = letzte Meldung
+			if !out[i].stale {
+				h.Server, sg.DHCPServer = srv, out[i].label
+				out[i].hints[len(out[i].hints)-1] = h
+			}
+			out[i].sightings = append(out[i].sightings, sg)
+		}
 	}
 	if err := closeRows(rows); err != nil {
 		return nil, err
 	}
 	rows, err = db.QueryContext(ctx, `SELECT source, ip, kind, mac, name, note, seen FROM ipam_source_leases
-		WHERE kind = 'fixed' OR expires = 0 OR expires > ? ORDER BY source, kind DESC, ip`, m.now().Unix())
+		WHERE kind = 'fixed' OR expires = 0 OR expires > ? ORDER BY source, kind DESC, ip`, now.Unix())
 	if err != nil {
 		return nil, err
 	}

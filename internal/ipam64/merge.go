@@ -32,10 +32,11 @@ type Net struct {
 	MarkFull    bool         `json:"mark_full"`
 	DNSZone     string       `json:"dns_zone,omitempty"`
 	Scan        string       `json:"scan"`
-	Dynamic     bool         `json:"dynamic"`               // IPv6 vom Provider, wechselt (Wurzel)
-	DynIndex    string       `json:"dyn_index,omitempty"`   // Praefix-ID unter einer dynamischen Wurzel
-	DHCP        bool         `json:"dhcp"`                  // DHCP-Netz in DNS64
-	ExtDHCP     string       `json:"dhcp_server,omitempty"` // fremder DHCP-Server vergibt hier (Anzeige, z. B. "pfSense")
+	Dynamic     bool         `json:"dynamic"`                       // IPv6 vom Provider, wechselt (Wurzel)
+	DynIndex    string       `json:"dyn_index,omitempty"`           // Praefix-ID unter einer dynamischen Wurzel
+	DHCP        bool         `json:"dhcp"`                          // DHCP-Netz in DNS64
+	ExtDHCP     string       `json:"dhcp_server,omitempty"`         // fremder DHCP-Server vergibt hier (Anzeige, z. B. "pfSense")
+	ExtServer   string       `json:"dhcp_server_address,omitempty"` // seine Adresse im Praefix, solange er meldet
 	Iface       string       `json:"interface,omitempty"`
 	Router      string       `json:"router,omitempty"`
 	PoolStart   string       `json:"pool_start,omitempty"`
@@ -97,6 +98,7 @@ type Entry struct {
 	Role        string    `json:"role,omitempty"`
 	Description string    `json:"description,omitempty"`
 	Tags        []string  `json:"tags,omitempty"`
+	DHCPServer  string    `json:"dhcp_server,omitempty"` // auf der Adresse laeuft ein aktiver DHCP-Server (Anzeige, z. B. "pfSense")
 
 	ip  netip.Addr
 	ext map[string]string // Anzeige fremder DHCP-Server je Quelle ("dhcp:pfsense" -> "pfSense")
@@ -232,6 +234,7 @@ func (m *Module) nets(ctx context.Context) ([]Net, error) {
 		n := &out[i]
 		if h.Ext != "" { // fremder DHCP-Server: Adressbereich und Router nur zur Anzeige, DNS64 schreibt dort nichts
 			n.ExtDHCP, n.Iface, n.Router, n.PoolStart, n.PoolEnd = h.ExtLabel, h.Iface, addrText(h.Router), addrText(h.Start), addrText(h.End)
+			n.ExtServer = addrText(h.Server)
 			if n.Name == "" {
 				n.Name = h.Name
 			}
@@ -474,6 +477,9 @@ func (m *Module) build(ctx context.Context) (*Snapshot, error) {
 			if s.Kind == KindDHCP {
 				a.leaseMAC = strings.ToLower(s.MAC)
 			}
+			if s.DHCPServer != "" {
+				a.e.DHCPServer = s.DHCPServer
+			}
 		}
 	}
 	takeExt := func() { // fremde DHCP-Server: im Rang direkt hinter dem DHCP-Server von DNS64
@@ -579,6 +585,9 @@ func (m *Module) build(ctx context.Context) (*Snapshot, error) {
 		}
 		if e.Note == "" && e.NoteKey == "" && e.IP == n.Router {
 			e.NoteKey = "ipam64.note.router"
+		}
+		if e.Note == "" && e.NoteKey == "" && e.DHCPServer != "" {
+			e.NoteKey = "ipam64.note.dhcp_server"
 		}
 		if e.Name == "" && e.NoteKey != "" && !conflict { // ohne Namen: der Hinweis ist der Name
 			e.NameKey, e.NoteKey = e.NoteKey, ""

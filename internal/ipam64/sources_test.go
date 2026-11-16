@@ -26,8 +26,9 @@ import (
 const srcBody = `{
 	"label": "pfSense",
 	"networks": [
-		{"subnet": "192.168.178.1/24", "name": "LAN", "interface": "igb1", "router": "192.168.178.1", "range_start": "192.168.178.100", "range_end": "192.168.178.199"},
-		{"subnet": "192.168.20.0/24", "name": "IoT", "interface": "igb1.20"},
+		{"subnet": "192.168.178.1/24", "name": "LAN", "interface": "igb1", "router": "192.168.178.1", "range_start": "192.168.178.100", "range_end": "192.168.178.199", "server": "192.168.178.1"},
+		{"subnet": "192.168.20.0/24", "name": "IoT", "interface": "igb1.20", "server": "192.168.20.254"},
+		{"subnet": "192.168.40.0/24", "server": "192.168.41.1"},
 		{"subnet": "fd00::/64", "name": "kein IPv4"},
 		{"subnet": "192.168.20.0/24", "name": "doppelt"},
 		{"subnet": "192.168.30.0/24", "router": "10.0.0.1"}
@@ -56,7 +57,7 @@ func TestSourceUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 	res, err := m.UpdateSource(ctx, "pfsense", in)
-	if err != nil || res.Networks != 2 || res.Reservations != 1 || res.Leases != 4 || res.Skipped != 5 || len(res.SkippedNotes) != 5 {
+	if err != nil || res.Networks != 2 || res.Reservations != 1 || res.Leases != 4 || res.Skipped != 6 || len(res.SkippedNotes) != 5 {
 		t.Fatalf("update: %+v %v", res, err)
 	}
 	list, err := m.Sources(ctx)
@@ -69,7 +70,7 @@ func TestSourceUpdate(t *testing.T) {
 	}
 	lan, iot := s.Net("192.168.178.0/24"), s.Net("192.168.20.0/24")
 	if len(s.Nets) != 2 || lan == nil || iot == nil || lan.DHCP || lan.ExtDHCP != "pfSense" || lan.UID != "" || lan.Name != "LAN" || lan.PoolStart != "192.168.178.100" ||
-		lan.Router != "192.168.178.1" || lan.Used != 3 || lan.PoolFree != 99 || iot.VLAN != 20 || iot.PoolStart != "" {
+		lan.Router != "192.168.178.1" || lan.Used != 3 || iot.Used != 2 || lan.PoolFree != 99 || iot.VLAN != 20 || iot.PoolStart != "" {
 		t.Fatalf("nets: %+v", s.Nets)
 	}
 	if s.Labels["dhcp:pfsense"] != "pfSense" {
@@ -80,8 +81,19 @@ func TestSourceUpdate(t *testing.T) {
 		nas.ExtLabel("dhcp:pfsense") != "pfSense" || nas.ExtLabel(SrcDHCP) != "" {
 		t.Fatalf("nas: %+v", nas)
 	}
-	if e := entry(t, s, "192.168.178.1"); e == nil || e.NameKey != "ipam64.note.router" || e.Kind != KindStatic { // Gateway gilt als belegt
+	if e := entry(t, s, "192.168.178.1"); e == nil || e.NameKey != "ipam64.note.router" || e.Kind != KindStatic || e.DHCPServer != "pfSense" || e.State != "online" { // Gateway gilt als belegt; wer meldet, ist da
 		t.Fatalf("router: %+v", e)
+	}
+	// der DHCP-Server ist gekennzeichnet: an der Adresse, am Praefix und im Raster; ohne eigenen Namen heisst er so
+	if e := entry(t, s, "192.168.20.254"); e == nil || e.DHCPServer != "pfSense" || e.NameKey != "ipam64.note.dhcp_server" || lan.ExtServer != "192.168.178.1" || iot.ExtServer != "192.168.20.254" {
+		t.Fatalf("dhcp server: %+v %q %q", e, lan.ExtServer, iot.ExtServer)
+	}
+	if e := entry(t, s, "192.168.178.10"); e.DHCPServer != "" {
+		t.Fatalf("nas marked as dhcp server: %+v", e)
+	}
+	grid := s.grid(lan, 0)
+	if grid[0][1].DHCP != "pfSense" || grid[0][10].DHCP != "" || grid[0][2].DHCP != "" {
+		t.Fatalf("grid: %+v", grid[0][:12])
 	}
 	if e := entry(t, s, "192.168.178.101"); e == nil || e.Kind != KindDHCP || e.State != "online" || e.Name != "macbook" {
 		t.Fatalf("lease: %+v", e)
@@ -124,13 +136,20 @@ func TestSourceUpdate(t *testing.T) {
 	if err != nil || res.Networks != 1 || res.Leases != 0 {
 		t.Fatalf("replace: %+v %v", res, err)
 	}
-	if s, _ = m.Snapshot(ctx); s.Net("192.168.178.0/24") == nil || s.Net("192.168.178.0/24").ExtDHCP != "" || s.Labels["dhcp:pfsense"] != "pfsense" ||
+	if s, _ = m.Snapshot(ctx); s.Net("192.168.178.0/24") == nil || s.Net("192.168.178.0/24").ExtDHCP != "" || s.Net("192.168.178.0/24").ExtServer != "" || s.Labels["dhcp:pfsense"] != "pfsense" ||
 		entry(t, s, "192.168.178.10") != nil {
 		t.Fatalf("after replace: %+v", s.Nets)
+	}
+	if _, err = m.UpdateSource(ctx, "pfsense", SourceUpdate{Label: "pfSense", Networks: []SourceNetwork{{Subnet: "192.168.20.0/24", Server: "192.168.20.254"}}}); err != nil {
+		t.Fatal(err)
 	}
 	m.now = func() time.Time { return now.Add(2 * time.Hour) }
 	if list, _ = m.Sources(ctx); !list[0].Stale {
 		t.Fatal("not stale")
+	}
+	m.invalidate() // ohne Meldung seit ueber einer Stunde: belegt, aber nicht mehr als aktiver DHCP-Server gekennzeichnet
+	if s, _ = m.Snapshot(ctx); entry(t, s, "192.168.20.254") == nil || entry(t, s, "192.168.20.254").DHCPServer != "" || s.Net("192.168.20.0/24").ExtServer != "" {
+		t.Fatalf("stale server still marked: %+v", entry(t, s, "192.168.20.254"))
 	}
 	m.now = time.Now
 	if err := m.DeleteSource(ctx, "pfsense"); err != nil {
@@ -276,7 +295,7 @@ func TestSourcePages(t *testing.T) {
 		}
 		return do(http.DefaultClient, method, path, body, hdr)
 	}
-	put := `{"label":"pf<i>Sense","networks":[{"subnet":"192.168.20.0/24","name":"IoT","interface":"igb1.20","range_start":"192.168.20.50","range_end":"192.168.20.150"}],
+	put := `{"label":"pf<i>Sense","networks":[{"subnet":"192.168.20.0/24","name":"IoT","interface":"igb1.20","range_start":"192.168.20.50","range_end":"192.168.20.150","server":"192.168.20.1"}],
 		"reservations":[{"ip":"192.168.20.5","mac":"02:64:14:00:00:05","name":"kamera"}],"leases":[{"ip":"192.168.20.51","mac":"02:64:14:00:00:33","name":"sensor","expires":4102444800}]}`
 	if code, _ := api("PUT", "/api/ipam64/sources/pfsense", put, ""); code == 200 {
 		t.Fatalf("put without key: %d", code)
@@ -311,7 +330,8 @@ func TestSourcePages(t *testing.T) {
 		t.Fatalf("untranslated key or unescaped label\n%s", body)
 	}
 	code, body = get("/ipam64/prefix?p=192.168.20.0/24")
-	for _, want := range []string{`id="ipam-ext-dhcp"`, "kamera", "sensor", ">pf&lt;i&gt;Sense</span>", "ipam-fixed"} {
+	for _, want := range []string{`id="ipam-ext-dhcp"`, "kamera", "sensor", ">pf&lt;i&gt;Sense</span>", "ipam-fixed", `ipam-static ipam-server" data-ip="192.168.20.1"`, `id="ipam-legend-server"`,
+		"aktiver DHCP-Server (pf&lt;i&gt;Sense)", `<i class="bi bi-router"></i> aktiver DHCP-Server</span>`} {
 		if code != 200 || !strings.Contains(body, want) {
 			t.Fatalf("prefix: %d, missing %q\n%s", code, want, body)
 		}
@@ -321,6 +341,9 @@ func TestSourcePages(t *testing.T) {
 	}
 	if code, body = get("/ipam64/address?ip=192.168.20.5"); code != 200 || !strings.Contains(body, `id="ipam-ext-dhcp"`) || !strings.Contains(body, "Lege die feste Zuweisung dort an") || untranslated(body) {
 		t.Fatalf("address: %d\n%s", code, body)
+	}
+	if code, body = get("/ipam64/address?ip=192.168.20.1"); code != 200 || !strings.Contains(body, `id="ipam-addr-server"`) || untranslated(body) {
+		t.Fatalf("address of the dhcp server: %d\n%s", code, body)
 	}
 	if code, body = get("/ipam64/collector/pfsense.php"); code != 200 || !strings.HasPrefix(body, "#!/usr/local/bin/php") {
 		t.Fatalf("collector: %d", code)

@@ -6,6 +6,7 @@ New (community proposal):
 
 - External DHCP servers: if a router or firewall hands out the addresses (instead of DNS64), the device can report its networks, fixed assignments and leases to IPAM64 (`PUT /api/ipam64/sources/{name}`, each report replaces the state of the source). The networks appear as a suggestion or prefix with its range, the leases as a source in the address view ("known from"), devices with a lease no longer count as unknown, "next free address" avoids the range. DNS64 writes nothing there; changes are made on the device. Per node, not synced in the cluster.
 - Ready-made script for pfSense (DHCPv4 with Kea) to download from the overview: reads networks and fixed assignments from the configuration and the leases from the lease files, reports via cron with an API key.
+- The active DHCP server is marked: if the source reports its own address (`server` per network), that address gets a strong border with a dot in the grid and the badge "active DHCP server" in the list and on the address page – as long as the source keeps reporting (up to one hour after the last report). The address counts as used.
 - Overview: card "External DHCP servers" with the state per source (last report, networks, fixed assignments, leases) and removal. API: `GET /api/ipam64/sources`, `DELETE /api/ipam64/sources/{name}`; prefixes name the server in `dhcp_server`.
 
 ## 0.6.1 – unreleased

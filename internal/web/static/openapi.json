@@ -10202,6 +10202,10 @@
             "type": "string",
             "description": "Fremder DHCP-Server, der hier vergibt (Anzeige der Quelle, z. B. pfSense); `dhcp` ist dann false"
           },
+          "dhcp_server_address": {
+            "type": "string",
+            "description": "Adresse dieses DHCP-Servers im Präfix, solange er meldet"
+          },
           "interface": {
             "type": "string"
           },
@@ -10539,6 +10543,10 @@
             "items": {
               "type": "string"
             }
+          },
+          "dhcp_server": {
+            "type": "string",
+            "description": "auf der Adresse läuft ein aktiver DHCP-Server (Anzeige der Quelle, z. B. pfSense)"
           },
           "first_seen": {
             "type": "string",
@@ -34941,6 +34949,10 @@
                         },
                         "range_end": {
                           "type": "string"
+                        },
+                        "server": {
+                          "type": "string",
+                          "description": "Adresse des DHCP-Servers in diesem Netz; wird im Raster als aktiver DHCP-Server gekennzeichnet, solange die Quelle meldet"
                         }
                       }
                     }

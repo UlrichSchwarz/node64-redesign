@@ -76,7 +76,7 @@ Nachbartabelle. Das Gerät kann seinen Stand deshalb melden; IPAM64 zeigt ihn an
   {
     "label": "pfSense",
     "networks": [{"subnet": "192.168.1.0/24", "name": "LAN", "interface": "igb1", "router": "192.168.1.1",
-                  "range_start": "192.168.1.100", "range_end": "192.168.1.199"}],
+                  "range_start": "192.168.1.100", "range_end": "192.168.1.199", "server": "192.168.1.1"}],
     "reservations": [{"ip": "192.168.1.10", "mac": "02:64:03:00:00:0a", "name": "nas", "comment": "Synology"}],
     "leases": [{"ip": "192.168.1.101", "mac": "02:64:03:00:00:65", "name": "macbook",
                 "expires": 1794817089, "last_seen": 1794809889}]
@@ -91,6 +91,9 @@ Nachbartabelle. Das Gerät kann seinen Stand deshalb melden; IPAM64 zeigt ihn an
   der Namen direkt hinter dem DHCP-Server von DNS64. Geräte mit Lease zählen nicht mehr als unbekannt; „nächste freie
   Adresse“ meidet den Adressbereich und das gemeldete Gateway; die Konfliktregeln (fremde MAC an einer festen Adresse, Lease gegen feste
   Adresse) gelten auch hier. Abgelaufene Vergaben verschwinden von selbst.
+- **Aktiver DHCP-Server**: Nennt die Quelle ihre eigene Adresse (`server` je Netz), ist diese im Raster mit kräftigem
+  Rand und Punkt, in der Liste und an der Adresse mit „aktiver DHCP-Server“ gekennzeichnet (API: `dhcp_server` an der
+  Adresse, `dhcp_server_address` am Präfix) – solange die Quelle meldet, also bis eine Stunde nach der letzten Meldung.
 - **Grenzen**: DNS64 schreibt in diesen Netzen keine Reservierungen; der Schalter *Feste Zuweisung* ist dort aus.
   Bedient DNS64 dasselbe Netz, gilt dessen Adressbereich. Die Meldungen bleiben je Node (kein Cluster-Abgleich). Bleibt
   eine Quelle länger als eine Stunde stumm, zeigt die Übersicht „keine Meldung“.

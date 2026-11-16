@@ -84,6 +84,8 @@ type Sighting struct {
 	NoteKey string    // statt Note: i18n-Schluessel (z. B. Cluster-Mitglied)
 	Kind    string    // KindDHCP, KindFixed oder leer
 	Seen    time.Time // zuletzt sicher erreichbar (Null = unbekannt)
+	// DHCPServer: auf dieser Adresse laeuft ein aktiver DHCP-Server (Anzeige, z. B. "pfSense"); leer = nein.
+	DHCPServer string
 }
 
 // NetHint ist ein Netz aus einer Quelle: ein DHCP-Netz aus DNS64 oder das Netz eines fremden DHCP-Servers (Ext gesetzt).
@@ -92,7 +94,8 @@ type NetHint struct {
 	Subnet             netip.Prefix
 	Router, Start, End netip.Addr
 	Domain             string
-	Ext, ExtLabel      string // fremder DHCP-Server: Kennung und Anzeige (sources.go)
+	Ext, ExtLabel      string     // fremder DHCP-Server: Kennung und Anzeige (sources.go)
+	Server             netip.Addr // fremder DHCP-Server: seine Adresse im Netz, solange er meldet
 }
 
 // Neighbor ist ein Eintrag der Nachbartabelle: MAC und wie lange die letzte Bestaetigung her ist.
