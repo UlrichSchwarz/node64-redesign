@@ -141,13 +141,23 @@
 		{{if eq $d.System.Key "pfsense"}}
 		<ol class="mb-2">
 			<li>{{.T "ipam64.sources.pf1"}} <a href="/api/docs">{{.T "nav.api"}}</a></li>
-			<li><a href="/ipam64/collector/pfsense.php" id="ipam-collector-pfsense"><i class="bi bi-download"></i> {{.T "ipam64.sources.pf2_link"}}</a> {{.T "ipam64.sources.pf2"}}</li>
-			<li>{{.T "ipam64.sources.pf3"}}<pre class="mb-1 mt-1"><code>url = "{{$d.NodeURL}}"
-key = "node64_..."</code></pre></li>
-			<li>{{.T "ipam64.sources.pf4"}} <code>php /root/node64-ipam.php -n</code> {{.T "ipam64.sources.pf4_send"}} <code>php /root/node64-ipam.php -v</code></li>
-			<li>{{.T "ipam64.sources.pf5"}} <code>/usr/local/bin/php /root/node64-ipam.php</code></li>
+			<li><a href="/ipam64/collector/pfsense.pkg" id="ipam-collector-pfpkg"><i class="bi bi-download"></i> {{.T "ipam64.sources.pk2_link"}}</a> <span class="font-monospace">({{$d.PfPkg}})</span></li>
+			<li>{{.T "ipam64.sources.pk3"}}</li>
+			<li>{{.T "ipam64.sources.pk4"}}<pre class="mb-1 mt-1"><code>pkg add -f /tmp/{{$d.PfPkg}}</code></pre></li>
+			<li>{{.T "ipam64.sources.pk5"}}<pre class="mb-1 mt-1"><code>{{$d.NodeURL}}</code></pre></li>
+			<li>{{.T "ipam64.sources.pk6"}}</li>
 		</ol>
-		<p class="mb-0 text-body-secondary">{{.T "ipam64.sources.pf_note"}}</p>
+		<p class="mb-2 text-body-secondary">{{.T "ipam64.sources.pf_note"}}</p>
+		<details class="mb-0">
+			<summary>{{.T "ipam64.sources.script_title"}}</summary>
+			<ol class="mt-2 mb-0">
+				<li><a href="/ipam64/collector/pfsense.php" id="ipam-collector-pfsense"><i class="bi bi-download"></i> {{.T "ipam64.sources.pf2_link"}}</a> {{.T "ipam64.sources.pf2"}}</li>
+				<li>{{.T "ipam64.sources.pf3"}}<pre class="mb-1 mt-1"><code>url = "{{$d.NodeURL}}"
+key = "node64_..."</code></pre></li>
+				<li>{{.T "ipam64.sources.pf4"}} <code>php /root/node64-ipam.php -n</code> {{.T "ipam64.sources.pf4_send"}} <code>php /root/node64-ipam.php -v</code></li>
+				<li>{{.T "ipam64.sources.pf5"}} <code>/usr/local/bin/php /root/node64-ipam.php</code></li>
+			</ol>
+		</details>
 		{{else}}
 		{{if ne $d.System.Key "other"}}<p class="mb-2"><span class="badge text-bg-warning">{{.T "ipam64.sources.no_script"}}</span> {{.T (print "ipam64.sources.sys." $d.System.Key)}}</p>{{end}}
 		<p class="mb-1">{{.T "ipam64.sources.api_intro"}}</p>

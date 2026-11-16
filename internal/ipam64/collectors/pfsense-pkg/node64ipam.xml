@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<packagegui>
+ <name>node64ipam</name><version>@VERSION@</version><title>Node64 IPAM64</title><donotsave>true</donotsave>
+ <include_file>/usr/local/pkg/node64ipam.inc</include_file>
+ <menu><name>Node64 IPAM64</name><section>Services</section><configfile>node64ipam.xml</configfile><url>/packages/node64ipam/index.php</url></menu>
+ <custom_php_resync_config_command><![CDATA[node64ipam_sync();]]></custom_php_resync_config_command>
+ <custom_delete_php_command><![CDATA[node64ipam_remove_schedule();]]></custom_delete_php_command>
+</packagegui>

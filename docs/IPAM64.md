@@ -97,7 +97,14 @@ Nachbartabelle. Das Gerät kann seinen Stand deshalb melden; IPAM64 zeigt ihn an
 - **Grenzen**: DNS64 schreibt in diesen Netzen keine Reservierungen; der Schalter *Feste Zuweisung* ist dort aus.
   Bedient DNS64 dasselbe Netz, gilt dessen Adressbereich. Die Meldungen bleiben je Node (kein Cluster-Abgleich). Bleibt
   eine Quelle länger als eine Stunde stumm, zeigt die Übersicht „keine Meldung“.
-- **pfSense (DHCPv4 mit Kea)**: Die Übersicht bietet unter *Fremde DHCP-Server* ein Skript zum Herunterladen
+- **pfSense als Paket**: Die Übersicht bietet unter *Fremde DHCP-Server* das Paket `pfSense-pkg-Node64IPAM` zum
+  Herunterladen (`/ipam64/collector/pfsense.pkg`). Die Node baut es beim ersten Abruf aus
+  `internal/ipam64/collectors/pfsense-pkg/` und dem Sammler `collectors/pfsense.php` (FreeBSD-pkg mit zstd, ABI
+  `FreeBSD:16:amd64` wie pfSense 2.9; Version in `pfpkg.go`). Auf der pfSense: *Diagnostics → Command Prompt*, Datei
+  hochladen, `pkg add -f /tmp/<Datei>`, dann *Services → Node64 IPAM64* (Adresse, API-Key, Intervall, Vorschau,
+  Senden; Zeitplan über `install_cron_job`). Der Aufbau entspricht dem Paket 0.1.1 aus der Community, das an einer
+  pfSense 2.9 läuft; das von der Node gebaute Paket selbst ist noch nicht an einer pfSense installiert worden.
+- **pfSense nur mit Skript (DHCPv4 mit Kea)**: Daneben gibt es das Skript allein zum Herunterladen
   (`internal/ipam64/collectors/pfsense.php`). Es liest Netze und feste Zuweisungen aus `/cf/conf/config.xml` und die
   Vergaben aus den Lease-Dateien von Kea (Datei aus der Kea-Konfiguration; gelesen wie Kea beim Start:
   `.completed`, sonst `.2` und `.1`, dann die Datei selbst) und ändert an der pfSense nichts. Einrichtung: Skript als

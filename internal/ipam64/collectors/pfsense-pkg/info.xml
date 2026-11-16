@@ -1,0 +1,2 @@
+<?xml version="1.0"?>
+<pfsensepkgs><package><name>Node64IPAM</name><descr>Node64 IPAM64 DHCP collector</descr><version>@VERSION@</version><configurationfile>node64ipam.xml</configurationfile></package></pfsensepkgs>

@@ -5960,7 +5960,7 @@
       "no_script": "no script yet",
       "sys_other": "Other system (API)",
       "pf4_send": "Send with output:",
-      "pf_note": "The script only reads (configuration and Kea lease files) and changes nothing on the pfSense. With a newer Node64, update the node first, then replace the script.",
+      "pf_note": "The package only reads (configuration and Kea lease files) and changes nothing about DHCP or the firewall. The API key is stored in the pfSense configuration and its backups. With a newer Node64, update the node first, then download and install the package from here again.",
       "api_intro": "Your own script can report the state via the API – each report is the complete state and replaces the previous one:",
       "api_note": "The name in the URL is up to you (a–z, 0–9, - and _). Times as Unix seconds or RFC 3339, IPv4 only. All fields:",
       "sys": {
@@ -5973,7 +5973,13 @@
         "kea": "Kea writes the same lease files as on pfSense (CSV; location under lease-database in kea-dhcp4.conf), networks and fixed assignments are in kea-dhcp4.conf.",
         "iscdhcp": "Leases are in dhcpd.leases (usually /var/lib/dhcp/), networks and fixed assignments in dhcpd.conf.",
         "windows": "PowerShell provides everything: Get-DhcpServerv4Scope, Get-DhcpServerv4Reservation and Get-DhcpServerv4Lease."
-      }
+      },
+      "pk2_link": "Download the package",
+      "pk3": "On the pfSense: Diagnostics › Command Prompt › “Upload File” – choose the file and upload it (it then lies under /tmp).",
+      "pk4": "On the same page install it under “Execute Shell Command”:",
+      "pk5": "Open Services › Node64 IPAM64: enter the API key and this node address, choose the interval, tick “Regelmäßigen Abgleich aktivieren” and save:",
+      "pk6": "“Vorschau ohne Senden” shows what would be reported; “Jetzt einmal senden” reports right away. The pfSense then appears in the table above.",
+      "script_title": "Without the package: just the script with cron"
     },
     "flash": {
       "imported": "{n} entries taken over.",

@@ -347,13 +347,16 @@ func TestSourcePages(t *testing.T) {
 	}
 	// Anleitung je System: Auswahl, Vorgabe pfSense, jedes System mit uebersetztem Hinweis, Adresse der Node eingesetzt
 	if code, body = get("/ipam64"); code != 200 || !strings.Contains(body, `id="ipam-sys"`) || !strings.Contains(body, `data-sys="pfsense"`) ||
-		!strings.Contains(body, `url = "`+srv.URL+`"`) || !strings.Contains(body, "noch kein Skript") {
+		!strings.Contains(body, `<code>`+srv.URL+`</code>`) || !strings.Contains(body, `url = "`+srv.URL+`"`) || !strings.Contains(body, "noch kein Skript") {
 		t.Fatalf("guide default: %d\n%s", code, body)
 	}
 	for _, sys := range DHCPSystems {
 		code, body = get("/ipam64?sys=" + sys.Key)
 		if code != 200 || !strings.Contains(body, `data-sys="`+sys.Key+`"`) || !strings.Contains(body, `<option value="`+sys.Key+`" selected>`) || untranslated(body) {
 			t.Fatalf("guide %s: %d\n%s", sys.Key, code, body)
+		}
+		if hasPkg := strings.Contains(body, `href="/ipam64/collector/pfsense.pkg"`) && strings.Contains(body, "pkg add -f /tmp/"+PfPkgFileName()); hasPkg != (sys.Key == "pfsense") {
+			t.Fatalf("guide %s: package steps %v", sys.Key, hasPkg)
 		}
 		if hasScript := strings.Contains(body, `id="ipam-collector-pfsense"`); hasScript != (sys.Key == "pfsense") {
 			t.Fatalf("guide %s: script link %v", sys.Key, hasScript)
@@ -367,6 +370,9 @@ func TestSourcePages(t *testing.T) {
 	}
 	if code, body = get("/ipam64?sys=gibtsnicht"); code != 200 || !strings.Contains(body, `data-sys="pfsense"`) {
 		t.Fatalf("guide unknown system: %d", code)
+	}
+	if code, body = get("/ipam64/collector/pfsense.pkg"); code != 200 || !strings.HasPrefix(body, "\x28\xb5\x2f\xfd") {
+		t.Fatalf("package download: %d", code)
 	}
 	if code, body = get("/ipam64/collector/pfsense.php"); code != 200 || !strings.HasPrefix(body, "#!/usr/local/bin/php") {
 		t.Fatalf("collector: %d", code)

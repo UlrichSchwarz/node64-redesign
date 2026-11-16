@@ -53,6 +53,7 @@ func (m *Module) uiRoutes(mux *http.ServeMux, g module.Guards) {
 	mux.Handle("POST /ipam64/import", page(m.postImport))
 	mux.Handle("POST /ipam64/source/delete", page(m.postSourceDelete))
 	mux.Handle("GET /ipam64/collector/pfsense.php", page(m.serveCollectorPfsense))
+	mux.Handle("GET /ipam64/collector/pfsense.pkg", page(m.servePfPkg))
 }
 
 const (
@@ -126,6 +127,7 @@ type overviewData struct {
 	System    DHCPSystem   // gewaehltes System (?sys=)
 	SysOpen   bool         // Karte offen: System gewaehlt
 	NodeURL   string       // Adresse dieser Node fuer die Anleitung (wie im Browser aufgerufen)
+	PfPkg     string       // Dateiname des Pakets fuer die pfSense
 }
 
 func (m *Module) overview(r *http.Request) (*overviewData, error) {
@@ -160,6 +162,7 @@ func (m *Module) overview(r *http.Request) (*overviewData, error) {
 	}
 	sys := r.URL.Query().Get("sys")
 	d.Systems, d.System, d.SysOpen = DHCPSystems, dhcpSystem(sys), sys != ""
+	d.PfPkg = PfPkgFileName()
 	d.NodeURL = "http://" + r.Host
 	if r.TLS != nil {
 		d.NodeURL = "https://" + r.Host

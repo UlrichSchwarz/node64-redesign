@@ -5960,7 +5960,7 @@
       "no_script": "noch kein Skript",
       "sys_other": "Anderes System (API)",
       "pf4_send": "Senden mit Ausgabe:",
-      "pf_note": "Das Skript liest nur (Konfiguration und Lease-Dateien von Kea) und ändert an der pfSense nichts. Bei einer neueren Node64 zuerst die Node aktualisieren, dann das Skript ersetzen.",
+      "pf_note": "Das Paket liest nur (Konfiguration und Lease-Dateien von Kea) und ändert an DHCP und Firewall nichts. Der API-Key steht in der pfSense-Konfiguration und ihren Sicherungen. Bei einem neueren Node64 zuerst die Node aktualisieren, dann das Paket hier neu herunterladen und installieren.",
       "api_intro": "Ein eigenes Skript kann den Stand über die API melden – jede Meldung ist der vollständige Stand und ersetzt den vorigen:",
       "api_note": "Kennung in der Adresse frei wählbar (a–z, 0–9, - und _). Zeiten als Unix-Sekunden oder RFC 3339, nur IPv4. Alle Felder:",
       "sys": {
@@ -5973,7 +5973,13 @@
         "kea": "Kea schreibt dieselben Lease-Dateien wie auf der pfSense (CSV; Ort unter lease-database in kea-dhcp4.conf), Netze und feste Zuweisungen stehen in kea-dhcp4.conf.",
         "iscdhcp": "Die Vergaben stehen in dhcpd.leases (meist /var/lib/dhcp/), Netze und feste Zuweisungen in dhcpd.conf.",
         "windows": "PowerShell liefert alles: Get-DhcpServerv4Scope, Get-DhcpServerv4Reservation und Get-DhcpServerv4Lease."
-      }
+      },
+      "pk2_link": "Paket herunterladen",
+      "pk3": "Auf der pfSense: Diagnostics › Command Prompt › „Upload File“ – die Datei auswählen und hochladen (sie liegt danach unter /tmp).",
+      "pk4": "Auf derselben Seite unter „Execute Shell Command“ installieren:",
+      "pk5": "Services › Node64 IPAM64 öffnen: API-Key und diese Node-Adresse eintragen, Intervall wählen, „Regelmäßigen Abgleich aktivieren“ und speichern:",
+      "pk6": "„Vorschau ohne Senden“ zeigt, was gemeldet würde; „Jetzt einmal senden“ meldet sofort. Danach erscheint die pfSense oben in der Tabelle.",
+      "script_title": "Ohne Paket: nur das Skript mit Cron"
     },
     "flash": {
       "imported": "{n} Einträge übernommen.",
