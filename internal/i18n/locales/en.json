@@ -1959,6 +1959,7 @@
       "ipam64_range_save": "IPAM64: range saved",
       "ipam64_prefix_delete": "IPAM64: prefix deleted",
       "ipam64_prefix_save": "IPAM64: prefix saved",
+      "ipam64_source_delete": "IPAM64: external DHCP server removed",
       "login_environment": "Signed in via Environment",
       "login_environment_failed": "Sign-in via Environment rejected",
       "environment_open": "Node opened via Environment",
@@ -5777,11 +5778,14 @@
       "delete": "Delete prefix",
       "delete_confirm": "Delete prefix? Addresses and ranges in it are kept.",
       "dhcp_only": "from DNS64",
-      "dhcp_only_hint": "DHCP network from DNS64, not yet in IPAM64. Take it over to maintain name, VLAN, status and tags."
+      "dhcp_only_hint": "DHCP network from DNS64, not yet in IPAM64. Take it over to maintain name, VLAN, status and tags.",
+      "ext_only": "reported",
+      "ext_only_hint": "Network of an external DHCP server, not yet in IPAM64. Adopt it to maintain name, VLAN, status and tags."
     },
     "suggest": {
       "title": "Suggestions",
       "dhcp": "DHCP network in DNS64",
+      "ext": "DHCP network of {name}",
       "local": "Network on this node",
       "take": "Take over into IPAM64",
       "hint": "Taking over opens the form pre-filled; nothing is created until you save."
@@ -5898,6 +5902,7 @@
       "dhcp": "Fixed assignment (reservation) for this MAC",
       "no_dhcpv6": "IPv6: no DHCPv6 – the address is set on the device (or via SLAAC/token).",
       "no_dhcp_net": "There is no DHCP network in DNS64 for this prefix.",
+      "ext_dhcp": "DHCP in this prefix is handled by “{name}”: create the fixed assignment there, it then shows up here.",
       "in_pool": "Lies in the DHCP range {from} – {to}: without a reservation DNS64 excludes the address from assignment.",
       "dhcp_hint": "With a reservation the device gets the address via DHCP – keep DHCP on at the device.",
       "no_dns64": "DNS64 is not running: only IPAM64 is saved, the entries in DNS64 follow once it runs.",
@@ -5931,6 +5936,26 @@
       "used": "Addresses used",
       "conflicts": "Conflicts"
     },
+    "sources": {
+      "title": "External DHCP servers",
+      "intro": "If a router or firewall hands out the addresses (instead of DNS64), the device can report its networks, fixed assignments and leases to IPAM64. They then appear as a source in the address view; changes are still made on the device. Per node, not synced in the cluster.",
+      "col_source": "Source",
+      "col_updated": "Last report",
+      "col_nets": "Networks",
+      "col_fixed": "Fixed assignments",
+      "col_leases": "Leases",
+      "stale": "no report",
+      "delete": "Remove source",
+      "delete_confirm": "Remove this source with all reported networks and leases? If the device keeps reporting, it appears again.",
+      "pfsense_title": "pfSense (DHCP with Kea)",
+      "pf1": "Create an API key in Node64:",
+      "pf2_link": "Download the script",
+      "pf2": "and store it on the pfSense as /root/node64-ipam.php (Diagnostics › Edit File).",
+      "pf3": "Create /root/node64-ipam.ini next to it:",
+      "pf4": "Test run under Diagnostics › Command Prompt:",
+      "pf5": "Run it every 5 minutes with the “Cron” package:",
+      "other": "Other systems report via the API (described under API):"
+    },
     "flash": {
       "imported": "{n} entries taken over.",
       "notify_saved": "Notifications saved.",
@@ -5946,7 +5971,8 @@
       "address_saved": "Address saved.",
       "address_deleted": "Address removed from IPAM64.",
       "scan_started": "Network scan running in the background – reload the page to see the result.",
-      "autoscan_saved": "Automatic scan saved."
+      "autoscan_saved": "Automatic scan saved.",
+      "source_deleted": "Source removed."
     },
     "err": {
       "import": "The file is empty, too large or has no column ip or prefix.",
@@ -5976,6 +6002,9 @@
       "busy": "A scan is already running.",
       "not_attached": "This node is not directly attached to this network – no scan possible.",
       "no_scan": "Network scan is not allowed for this prefix (only private IPv4 networks up to /22, scan not off).",
+      "source_name": "The source name is invalid (a–z, 0–9, - and _, at most 32 characters).",
+      "source_limit": "There are already 16 sources.",
+      "source_size": "The report contains too many entries.",
       "internal": "Internal error – details in the log."
     }
   },

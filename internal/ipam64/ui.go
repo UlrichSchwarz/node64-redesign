@@ -51,6 +51,8 @@ func (m *Module) uiRoutes(mux *http.ServeMux, g module.Guards) {
 	mux.Handle("POST /ipam64/notify", page(m.postNotify))
 	mux.Handle("GET /ipam64/import", page(m.pageImport))
 	mux.Handle("POST /ipam64/import", page(m.postImport))
+	mux.Handle("POST /ipam64/source/delete", page(m.postSourceDelete))
+	mux.Handle("GET /ipam64/collector/pfsense.php", page(m.serveCollectorPfsense))
 }
 
 const (
@@ -63,7 +65,8 @@ func errKey(err error) string {
 	for e, k := range map[error]string{ErrPrefix: "prefix", ErrSize: "size", ErrDup: "dup", ErrName: "name", ErrHost: "host", ErrStatus: "status",
 		ErrVLAN: "vlan", ErrTags: "tags", ErrRange: "range", ErrRangeNet: "range_net", ErrOverlap: "overlap", ErrIP: "ip", ErrNoNet: "no_net",
 		ErrNetAddr: "net_addr", ErrMAC: "mac", ErrTaken: "taken", ErrRole: "role", ErrNotFound: "not_found", ErrBusy: "busy",
-		ErrNotAttached: "not_attached", ErrNoScan: "no_scan", ErrNoZone: "no_zone", ErrNoDNS64: "no_dns64", ErrDyn: "dyn", ErrImport: "import", ErrCSVLine: "csv_line"} {
+		ErrNotAttached: "not_attached", ErrNoScan: "no_scan", ErrNoZone: "no_zone", ErrNoDNS64: "no_dns64", ErrDyn: "dyn", ErrImport: "import", ErrCSVLine: "csv_line",
+		ErrSourceName: "source_name", ErrSourceLimit: "source_limit", ErrSourceSize: "source_size"} {
 		if errors.Is(err, e) {
 			return "ipam64.err." + k
 		}
@@ -114,10 +117,11 @@ type overviewData struct {
 	AutoOpts  []int
 	LastScan  time.Time
 	Scan      ScanStatus
-	DNS64     bool       // DNS64 laeuft (Uebergabe moeglich)
-	Dyn       *DynChange // letzter Wechsel eines dynamischen IPv6-Praefixes
-	Stale     []string   // Ziele anderer Module, die noch auf das alte Praefix zeigen
-	HasDyn    bool       // es gibt ein dynamisches Praefix
+	DNS64     bool         // DNS64 laeuft (Uebergabe moeglich)
+	Dyn       *DynChange   // letzter Wechsel eines dynamischen IPv6-Praefixes
+	Stale     []string     // Ziele anderer Module, die noch auf das alte Praefix zeigen
+	HasDyn    bool         // es gibt ein dynamisches Praefix
+	Sources   []SourceInfo // fremde DHCP-Server (sources.go)
 }
 
 func (m *Module) overview(r *http.Request) (*overviewData, error) {
@@ -146,6 +150,9 @@ func (m *Module) overview(r *http.Request) (*overviewData, error) {
 	d.VLANs = len(vlans)
 	for _, n := range snap.Nets {
 		d.HasDyn = d.HasDyn || n.Dynamic
+	}
+	if d.Sources, err = m.Sources(ctx); err != nil {
+		return nil, err
 	}
 	if d.Dyn = m.LastDynChange(ctx); d.Dyn != nil && m.now().Sub(d.Dyn.At) < 7*24*time.Hour {
 		d.Stale = m.StaleTargets(ctx, d.Dyn.From)
@@ -177,6 +184,29 @@ func (m *Module) pageOverview(w http.ResponseWriter, r *http.Request) {
 			d.FormOpen, d.Form.Prefix, d.Form.Name = true, p, r.URL.Query().Get("name")
 		}
 	})
+}
+
+// collectorPfsense ist das Skript, das auf einer pfSense laeuft und ihren DHCP-Stand meldet (Download auf der Seite).
+//
+//go:embed collectors/pfsense.php
+var collectorPfsense []byte
+
+func (m *Module) postSourceDelete(w http.ResponseWriter, r *http.Request) {
+	name := r.PostFormValue("name")
+	if err := m.DeleteSource(r.Context(), name); err != nil {
+		m.g.Flash(w, r, "danger", m.errText(r, err))
+	} else {
+		m.g.Audit(r, "ipam64.source.delete", name, "")
+		m.g.Flash(w, r, "success", m.g.T(r, "ipam64.flash.source_deleted"))
+	}
+	http.Redirect(w, r, "/ipam64", http.StatusSeeOther)
+}
+
+// serveCollectorPfsense liefert das Skript fuer die pfSense zum Herunterladen.
+func (m *Module) serveCollectorPfsense(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Content-Disposition", `attachment; filename="node64-ipam.php"`)
+	_, _ = w.Write(collectorPfsense)
 }
 
 // ---- Praefix ----

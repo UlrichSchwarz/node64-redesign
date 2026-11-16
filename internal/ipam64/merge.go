@@ -32,9 +32,10 @@ type Net struct {
 	MarkFull    bool         `json:"mark_full"`
 	DNSZone     string       `json:"dns_zone,omitempty"`
 	Scan        string       `json:"scan"`
-	Dynamic     bool         `json:"dynamic"`             // IPv6 vom Provider, wechselt (Wurzel)
-	DynIndex    string       `json:"dyn_index,omitempty"` // Praefix-ID unter einer dynamischen Wurzel
-	DHCP        bool         `json:"dhcp"`                // DHCP-Netz in DNS64
+	Dynamic     bool         `json:"dynamic"`               // IPv6 vom Provider, wechselt (Wurzel)
+	DynIndex    string       `json:"dyn_index,omitempty"`   // Praefix-ID unter einer dynamischen Wurzel
+	DHCP        bool         `json:"dhcp"`                  // DHCP-Netz in DNS64
+	ExtDHCP     string       `json:"dhcp_server,omitempty"` // fremder DHCP-Server vergibt hier (Anzeige, z. B. "pfSense")
 	Iface       string       `json:"interface,omitempty"`
 	Router      string       `json:"router,omitempty"`
 	PoolStart   string       `json:"pool_start,omitempty"`
@@ -97,8 +98,12 @@ type Entry struct {
 	Description string    `json:"description,omitempty"`
 	Tags        []string  `json:"tags,omitempty"`
 
-	ip netip.Addr
+	ip  netip.Addr
+	ext map[string]string // Anzeige fremder DHCP-Server je Quelle ("dhcp:pfsense" -> "pfSense")
 }
+
+// ExtLabel liefert die Anzeige einer fremden Quelle aus Sources ("" = eingebaute Quelle, Text unter ipam64.src.*).
+func (e Entry) ExtLabel(source string) string { return e.ext[source] }
 
 // Addr ist die Adresse als netip.Addr.
 func (e Entry) Addr() netip.Addr { return e.ip }
@@ -107,6 +112,7 @@ func (e Entry) Addr() netip.Addr { return e.ip }
 type Snapshot struct {
 	Nets    []Net
 	Ranges  []Range
+	Labels  map[string]string // Anzeige fremder DHCP-Server ("dhcp:pfsense" -> "pfSense")
 	entries map[netip.Prefix][]Entry
 	At      time.Time
 }
@@ -224,6 +230,13 @@ func (m *Module) nets(ctx context.Context) ([]Net, error) {
 			out = append(out, Net{Prefix: h.Subnet, CIDR: h.Subnet.String(), Family: 4, Name: h.Name, Status: StatusActive, Scan: ScanPassive, Tags: []string{}})
 		}
 		n := &out[i]
+		if h.Ext != "" { // fremder DHCP-Server: Adressbereich und Router nur zur Anzeige, DNS64 schreibt dort nichts
+			n.ExtDHCP, n.Iface, n.Router, n.PoolStart, n.PoolEnd = h.ExtLabel, h.Iface, addrText(h.Router), addrText(h.Start), addrText(h.End)
+			if n.Name == "" {
+				n.Name = h.Name
+			}
+			continue
+		}
 		n.DHCP, n.Iface, n.Router, n.PoolStart, n.PoolEnd, n.Domain = true, h.Iface, addrText(h.Router), addrText(h.Start), addrText(h.End), h.Domain
 		if n.Name == "" {
 			n.Name = h.Name
@@ -381,7 +394,14 @@ func (m *Module) build(ctx context.Context) (*Snapshot, error) {
 		y, _ := netip.ParseAddr(b.Start)
 		return x.Compare(y)
 	})
-	snap := &Snapshot{Nets: nets, Ranges: ranges, entries: map[netip.Prefix][]Entry{}, At: now}
+	ext, err := m.extSources(ctx)
+	if err != nil {
+		return nil, err
+	}
+	snap := &Snapshot{Nets: nets, Ranges: ranges, Labels: map[string]string{}, entries: map[netip.Prefix][]Entry{}, At: now}
+	for _, src := range ext {
+		snap.Labels[SrcExtPrefix+src.name] = src.label
+	}
 	all := map[netip.Addr]*acc{}
 	get := func(ip netip.Addr) *acc { // nil: in keinem Praefix, im Container ohne Adressen egal, Netz-/Broadcast-Adresse
 		ip = ip.Unmap()
@@ -427,13 +447,13 @@ func (m *Module) build(ctx context.Context) (*Snapshot, error) {
 		s   Sighting
 	}
 	var byName []later
-	for _, src := range m.sources {
-		for _, s := range src.f(ctx) {
+	take := func(key string, list []Sighting) {
+		for _, s := range list {
 			h := hostOf(s.Addr)
 			ip, err := netip.ParseAddr(h)
 			if err != nil {
 				if h != "" {
-					byName = append(byName, later{src.key, s})
+					byName = append(byName, later{key, s})
 				}
 				continue
 			}
@@ -441,7 +461,7 @@ func (m *Module) build(ctx context.Context) (*Snapshot, error) {
 			if a == nil {
 				continue
 			}
-			a.source(src.key)
+			a.source(key)
 			a.name(s.Name, s.Note)
 			if s.NoteKey != "" && a.e.Note == "" && a.e.NoteKey == "" {
 				a.e.NoteKey = s.NoteKey
@@ -455,6 +475,22 @@ func (m *Module) build(ctx context.Context) (*Snapshot, error) {
 				a.leaseMAC = strings.ToLower(s.MAC)
 			}
 		}
+	}
+	takeExt := func() { // fremde DHCP-Server: im Rang direkt hinter dem DHCP-Server von DNS64
+		for _, src := range ext {
+			take(SrcExtPrefix+src.name, src.sightings)
+		}
+	}
+	extDone := false
+	for _, src := range m.sources {
+		if !extDone && src.key != SrcDHCP {
+			takeExt()
+			extDone = true
+		}
+		take(src.key, src.f(ctx))
+	}
+	if !extDone {
+		takeExt()
 	}
 	seen, err := m.seenRows(ctx)
 	if err != nil {
@@ -551,6 +587,7 @@ func (m *Module) build(ctx context.Context) (*Snapshot, error) {
 			e.Tags = []string{}
 		}
 		n.Used++
+		e.ext = snap.Labels
 		snap.entries[n.Prefix] = append(snap.entries[n.Prefix], e)
 	}
 	for i := range nets {

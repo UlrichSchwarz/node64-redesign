@@ -10198,6 +10198,10 @@
           "dhcp": {
             "type": "boolean"
           },
+          "dhcp_server": {
+            "type": "string",
+            "description": "Fremder DHCP-Server, der hier vergibt (Anzeige der Quelle, z. B. pfSense); `dhcp` ist dann false"
+          },
           "interface": {
             "type": "string"
           },
@@ -10576,6 +10580,51 @@
           },
           "error": {
             "type": "string"
+          }
+        }
+      },
+      "IPAM64SourceLease": {
+        "type": "object",
+        "description": "Feste Zuweisung bzw. Vergabe eines fremden DHCP-Servers",
+        "required": [
+          "ip"
+        ],
+        "properties": {
+          "ip": {
+            "type": "string",
+            "description": "IPv4-Adresse"
+          },
+          "mac": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name der festen Zuweisung bzw. Hostname des Geräts"
+          },
+          "comment": {
+            "type": "string"
+          },
+          "expires": {
+            "description": "Ablauf der Vergabe als Unix-Sekunden oder RFC 3339; leer = unbekannt (bleibt bis zur nächsten Meldung)",
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "last_seen": {
+            "description": "letzte Verlängerung als Unix-Sekunden oder RFC 3339; leer = unbekannt",
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ]
           }
         }
       },
@@ -34775,6 +34824,242 @@
                       }
                     }
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ipam64/sources": {
+      "get": {
+        "tags": [
+          "IPAM64"
+        ],
+        "summary": "Fremde DHCP-Server",
+        "description": "Router und Firewalls, die ihren DHCP-Stand an IPAM64 melden, mit Zeitpunkt der letzten Meldung und Zählern. Je Node.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sources": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "label": {
+                            "type": "string"
+                          },
+                          "updated_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "stale": {
+                            "type": "boolean",
+                            "description": "länger als eine Stunde keine Meldung"
+                          },
+                          "networks": {
+                            "type": "integer"
+                          },
+                          "reservations": {
+                            "type": "integer"
+                          },
+                          "leases": {
+                            "type": "integer",
+                            "description": "nicht abgelaufene Vergaben"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ipam64/sources/{name}": {
+      "put": {
+        "tags": [
+          "IPAM64"
+        ],
+        "summary": "Stand eines fremden DHCP-Servers melden",
+        "description": "Vollständiger Stand der Quelle `name`; ersetzt den bisherigen. Die Netze erscheinen als Präfix mit Adressbereich (`dhcp_server`), feste Zuweisungen und Vergaben als Quelle `dhcp:<name>` in der Belegung. Nur IPv4, Netze von /8 bis /30. Unbekannte Felder sind ein Fehler; einzelne ungültige Einträge werden übersprungen und gezählt. Höchstens 16 Quellen, je Quelle 64 Netze und 8192 feste Zuweisungen und Vergaben, Rumpf bis 4 MB. Kein Eintrag im Audit-Log (kommt regelmäßig von einem Skript).",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "description": "Kennung der Quelle: a–z, 0–9, - und _, höchstens 32 Zeichen",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "description": "Anzeige, leer = Kennung"
+                  },
+                  "networks": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "subnet"
+                      ],
+                      "properties": {
+                        "subnet": {
+                          "type": "string",
+                          "example": "192.168.1.0/24"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "interface": {
+                          "type": "string"
+                        },
+                        "router": {
+                          "type": "string"
+                        },
+                        "range_start": {
+                          "type": "string"
+                        },
+                        "range_end": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "reservations": {
+                    "type": "array",
+                    "description": "feste Zuweisungen",
+                    "items": {
+                      "$ref": "#/components/schemas/IPAM64SourceLease"
+                    }
+                  },
+                  "leases": {
+                    "type": "array",
+                    "description": "aktuelle Vergaben",
+                    "items": {
+                      "$ref": "#/components/schemas/IPAM64SourceLease"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string"
+                    },
+                    "networks": {
+                      "type": "integer"
+                    },
+                    "reservations": {
+                      "type": "integer"
+                    },
+                    "leases": {
+                      "type": "integer"
+                    },
+                    "skipped": {
+                      "type": "integer",
+                      "description": "übersprungene Einträge (ungültig, kein IPv4, doppelt)"
+                    },
+                    "skipped_notes": {
+                      "type": "array",
+                      "description": "die ersten fünf Gründe",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Kennung oder JSON ungültig, zu viele Einträge",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Schon 16 Quellen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "IPAM64"
+        ],
+        "summary": "Fremden DHCP-Server entfernen",
+        "description": "Entfernt die Quelle mit allem, was sie gemeldet hat. Meldet das Gerät weiter, erscheint sie wieder.",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deleted": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Quelle unbekannt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }

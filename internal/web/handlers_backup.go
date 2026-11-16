@@ -60,6 +60,9 @@ func bodyLimitFor(path string) int64 {
 	case "/api/dns64/rules", "/api/dns64/denylist": // JSON bis 4 MB (rules_ui.go, lists_ui.go)
 		return 4<<20 + 64<<10
 	}
+	if strings.HasPrefix(path, "/api/ipam64/sources/") { // Meldung eines fremden DHCP-Servers, JSON bis 4 MB (ipam64/sources.go)
+		return 4<<20 + 64<<10
+	}
 	return maxBody
 }
 

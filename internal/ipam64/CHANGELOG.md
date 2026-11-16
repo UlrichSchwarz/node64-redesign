@@ -1,5 +1,13 @@
 # IPAM64 – Änderungen
 
+## 0.7.0 – unveröffentlicht
+
+Neu (Vorschlag aus der Community):
+
+- Fremde DHCP-Server: Vergibt ein Router oder eine Firewall die Adressen (statt DNS64), kann das Gerät seine Netze, festen Zuweisungen und Vergaben an IPAM64 melden (`PUT /api/ipam64/sources/{name}`, jede Meldung ersetzt den Stand der Quelle). Die Netze erscheinen als Vorschlag bzw. Präfix mit Adressbereich, die Vergaben als Quelle in der Belegung („Bekannt aus“), Geräte mit Lease zählen nicht mehr als unbekannt, „Nächste freie Adresse“ meidet den Adressbereich. DNS64 schreibt dort nichts; geändert wird am Gerät. Je Node, nicht im Cluster abgeglichen.
+- Fertiges Skript für pfSense (DHCPv4 mit Kea) zum Herunterladen in der Übersicht: liest Netze und feste Zuweisungen aus der Konfiguration und die Vergaben aus den Lease-Dateien, meldet per Cron mit einem API-Key.
+- Übersicht: Karte „Fremde DHCP-Server“ mit Stand je Quelle (zuletzt gemeldet, Netze, feste Zuweisungen, Vergaben) und Entfernen. API: `GET /api/ipam64/sources`, `DELETE /api/ipam64/sources/{name}`; Präfixe nennen den Server in `dhcp_server`.
+
 ## 0.6.1 – unveröffentlicht
 
 Behoben (Code-Review):

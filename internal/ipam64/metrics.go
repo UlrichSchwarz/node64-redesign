@@ -21,7 +21,7 @@ func (m *Module) Metrics(ctx context.Context, w *metrics.Writer) {
 		if n.IsV4() || n.Container() || n.MarkFull {
 			w.Gauge("node64_ipam64_prefix_utilization_ratio", "Auslastung (0-1; Container: Anteil der Kinder-Praefixe).", n.Pct/100, l...)
 		}
-		if n.DHCP {
+		if n.DHCP || n.ExtDHCP != "" {
 			w.Gauge("node64_ipam64_prefix_pool_free", "Freie Adressen im DHCP-Adressbereich.", float64(n.PoolFree), l...)
 		}
 	}

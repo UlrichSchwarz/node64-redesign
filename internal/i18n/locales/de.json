@@ -1959,6 +1959,7 @@
       "ipam64_range_save": "IPAM64: Adressbereich gespeichert",
       "ipam64_prefix_delete": "IPAM64: Präfix gelöscht",
       "ipam64_prefix_save": "IPAM64: Präfix gespeichert",
+      "ipam64_source_delete": "IPAM64: fremder DHCP-Server entfernt",
       "login_environment": "Über Environment angemeldet",
       "login_environment_failed": "Anmeldung über Environment abgelehnt",
       "environment_open": "Node über Environment geöffnet",
@@ -5777,11 +5778,14 @@
       "delete": "Präfix löschen",
       "delete_confirm": "Präfix löschen? Adressen und Adressbereiche darin bleiben erhalten.",
       "dhcp_only": "aus DNS64",
-      "dhcp_only_hint": "DHCP-Netz aus DNS64, noch nicht in IPAM64. Übernimm es, um Name, VLAN, Status und Tags zu pflegen."
+      "dhcp_only_hint": "DHCP-Netz aus DNS64, noch nicht in IPAM64. Übernimm es, um Name, VLAN, Status und Tags zu pflegen.",
+      "ext_only": "gemeldet",
+      "ext_only_hint": "Netz eines fremden DHCP-Servers, noch nicht in IPAM64. Übernimm es, um Name, VLAN, Status und Tags zu pflegen."
     },
     "suggest": {
       "title": "Vorschläge",
       "dhcp": "DHCP-Netz in DNS64",
+      "ext": "DHCP-Netz von {name}",
       "local": "Netz an dieser Node",
       "take": "In IPAM64 übernehmen",
       "hint": "Übernehmen öffnet das Formular vorbelegt; nichts wird ohne Speichern angelegt."
@@ -5898,6 +5902,7 @@
       "dhcp": "Feste Zuweisung (Reservierung) für diese MAC",
       "no_dhcpv6": "IPv6: kein DHCPv6 – die Adresse wird am Gerät eingestellt (oder per SLAAC/Token).",
       "no_dhcp_net": "Für dieses Präfix gibt es kein DHCP-Netz in DNS64.",
+      "ext_dhcp": "DHCP macht in diesem Präfix „{name}“: Lege die feste Zuweisung dort an, sie erscheint dann hier.",
       "in_pool": "Liegt im DHCP-Adressbereich {from} – {to}: ohne Reservierung nimmt DNS64 die Adresse aus der Vergabe aus.",
       "dhcp_hint": "Mit Reservierung bekommt das Gerät die Adresse per DHCP – am Gerät bleibt DHCP an.",
       "no_dns64": "DNS64 läuft nicht: gespeichert wird nur in IPAM64, die Einträge in DNS64 folgen, sobald es läuft.",
@@ -5931,6 +5936,26 @@
       "used": "Adressen belegt",
       "conflicts": "Konflikte"
     },
+    "sources": {
+      "title": "Fremde DHCP-Server",
+      "intro": "Vergibt ein Router oder eine Firewall die Adressen (statt DNS64), kann das Gerät seine Netze, festen Zuweisungen und Vergaben an IPAM64 melden. Sie erscheinen dann als Quelle in der Belegung; geändert wird weiter am Gerät. Je Node, nicht im Cluster abgeglichen.",
+      "col_source": "Quelle",
+      "col_updated": "Zuletzt gemeldet",
+      "col_nets": "Netze",
+      "col_fixed": "Feste Zuweisungen",
+      "col_leases": "Vergaben",
+      "stale": "keine Meldung",
+      "delete": "Quelle entfernen",
+      "delete_confirm": "Quelle mit allen gemeldeten Netzen und Vergaben entfernen? Meldet das Gerät weiter, erscheint sie wieder.",
+      "pfsense_title": "pfSense (DHCP mit Kea)",
+      "pf1": "API-Key in Node64 anlegen:",
+      "pf2_link": "Skript herunterladen",
+      "pf2": "und auf der pfSense als /root/node64-ipam.php ablegen (Diagnostics › Edit File).",
+      "pf3": "Daneben /root/node64-ipam.ini anlegen:",
+      "pf4": "Probelauf unter Diagnostics › Command Prompt:",
+      "pf5": "Im Paket „Cron“ alle 5 Minuten ausführen:",
+      "other": "Andere Systeme melden über die API (Beschreibung unter API):"
+    },
     "flash": {
       "imported": "{n} Einträge übernommen.",
       "notify_saved": "Benachrichtigungen gespeichert.",
@@ -5946,7 +5971,8 @@
       "address_saved": "Adresse gespeichert.",
       "address_deleted": "Adresse aus IPAM64 entfernt.",
       "scan_started": "Netz-Scan läuft im Hintergrund – die Seite zeigt das Ergebnis nach dem Neuladen.",
-      "autoscan_saved": "Automatischer Scan gespeichert."
+      "autoscan_saved": "Automatischer Scan gespeichert.",
+      "source_deleted": "Quelle entfernt."
     },
     "err": {
       "import": "Die Datei ist leer, zu groß oder hat keine Spalte ip bzw. prefix.",
@@ -5976,6 +6002,9 @@
       "busy": "Es läuft schon ein Scan.",
       "not_attached": "Diese Node hängt nicht direkt an diesem Netz – kein Scan möglich.",
       "no_scan": "Für dieses Präfix ist kein Netz-Scan erlaubt (nur private IPv4-Netze bis /22, Scan nicht aus).",
+      "source_name": "Die Kennung der Quelle ist ungültig (a–z, 0–9, - und _, höchstens 32 Zeichen).",
+      "source_limit": "Es sind schon 16 Quellen angelegt.",
+      "source_size": "Die Meldung enthält zu viele Einträge.",
       "internal": "Interner Fehler – Details im Log."
     }
   },

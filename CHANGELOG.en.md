@@ -4,6 +4,8 @@ Short summary of what changes per version. Details per module are in the node un
 
 ## Unreleased
 
+- IPAM64 0.7.0: external DHCP servers (router, firewall) can report their networks, fixed assignments and leases to IPAM64; ready-made script for pfSense with Kea to download (community proposal).
+
 ## 1.7.3 – 2026-11-15
 
 - DNS64: DNS rebinding protection (on by default; if your own domain points to devices in your home network publicly, add it as an exception in the settings); new home network CAs only cover local and own names, an existing CA can be replaced by a restricted one with a button.

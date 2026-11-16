@@ -24,7 +24,7 @@
 	<div class="card-header"><i class="bi bi-lightbulb text-primary"></i> {{.T "ipam64.suggest.title"}}</div>
 	<ul class="list-group list-group-flush small">
 		{{range $d.Suggest}}<li class="list-group-item d-flex flex-wrap align-items-center gap-2">
-			<span class="font-monospace">{{.CIDR}}</span><span>{{.Name}}</span><span class="badge text-bg-light border"><i class="bi bi-router"></i> {{$.T "ipam64.suggest.dhcp"}}</span>
+			<span class="font-monospace">{{.CIDR}}</span><span>{{.Name}}</span><span class="badge text-bg-light border"><i class="bi bi-router"></i> {{if .DHCP}}{{$.T "ipam64.suggest.dhcp"}}{{else}}{{$.T "ipam64.suggest.ext" "name" .ExtDHCP}}{{end}}</span>
 			<a class="ms-auto" href="/ipam64?new={{.CIDR}}&amp;name={{.Name}}">{{$.T "ipam64.suggest.take"}}</a>
 		</li>{{end}}
 		{{range $d.Local}}<li class="list-group-item d-flex flex-wrap align-items-center gap-2">
@@ -62,11 +62,11 @@
 			<tbody>
 			{{range $d.Nets}}
 			<tr>
-				<td data-label="{{$.T "ipam64.col.prefix"}}" class="text-nowrap">{{range seq .Depth}}<span class="ipam-tree-ind">└</span>{{end}}<a class="font-monospace fw-semibold" href="/ipam64/prefix?p={{.CIDR}}">{{.CIDR}}</a>{{if .Dynamic}} <span class="badge text-bg-info" title="{{$.T "ipam64.prefix.dynamic_hint"}}">{{$.T "ipam64.prefix.dynamic_badge"}}</span>{{else if .DynIndex}} <span class="badge text-bg-light border" title="{{$.T "ipam64.prefix.dyn_index_hint"}}">ID {{.DynIndex}}</span>{{end}}{{if not .UID}} <span class="badge text-bg-light border" title="{{$.T "ipam64.prefix.dhcp_only_hint"}}">{{$.T "ipam64.prefix.dhcp_only"}}</span>{{end}}</td>
+				<td data-label="{{$.T "ipam64.col.prefix"}}" class="text-nowrap">{{range seq .Depth}}<span class="ipam-tree-ind">└</span>{{end}}<a class="font-monospace fw-semibold" href="/ipam64/prefix?p={{.CIDR}}">{{.CIDR}}</a>{{if .Dynamic}} <span class="badge text-bg-info" title="{{$.T "ipam64.prefix.dynamic_hint"}}">{{$.T "ipam64.prefix.dynamic_badge"}}</span>{{else if .DynIndex}} <span class="badge text-bg-light border" title="{{$.T "ipam64.prefix.dyn_index_hint"}}">ID {{.DynIndex}}</span>{{end}}{{if not .UID}} {{if .DHCP}}<span class="badge text-bg-light border" title="{{$.T "ipam64.prefix.dhcp_only_hint"}}">{{$.T "ipam64.prefix.dhcp_only"}}</span>{{else}}<span class="badge text-bg-light border" title="{{$.T "ipam64.prefix.ext_only_hint"}}">{{$.T "ipam64.prefix.ext_only"}}</span>{{end}}{{end}}</td>
 				<td data-label="{{$.T "ipam64.col.name"}}">{{.Name}}</td>
 				<td data-label="VLAN">{{if .VLAN}}<span class="badge text-bg-light border">{{.VLAN}}</span>{{end}}</td>
 				<td data-label="{{$.T "ipam64.col.status"}}"><span class="badge {{if eq .Status "container"}}text-bg-secondary{{else if eq .Status "active"}}text-bg-success{{else if eq .Status "reserved"}}text-bg-warning{{else}}text-bg-light border{{end}}">{{$.T (print "ipam64.status." .Status)}}</span></td>
-				<td data-label="{{$.T "ipam64.col.dhcp"}}" class="d-none d-lg-table-cell">{{if .DHCP}}<a href="/dns64/dhcp" class="font-monospace">{{.PoolStart}}–{{.PoolEnd}}</a>{{else}}<span class="text-body-tertiary">–</span>{{end}}</td>
+				<td data-label="{{$.T "ipam64.col.dhcp"}}" class="d-none d-lg-table-cell">{{if .DHCP}}<a href="/dns64/dhcp" class="font-monospace">{{.PoolStart}}–{{.PoolEnd}}</a>{{else if .ExtDHCP}}{{if .PoolStart}}<span class="font-monospace">{{.PoolStart}}–{{.PoolEnd}}</span> {{end}}<span class="badge text-bg-light border">{{.ExtDHCP}}</span>{{else}}<span class="text-body-tertiary">–</span>{{end}}</td>
 				<td data-label="{{$.T "ipam64.col.zone"}}" class="d-none d-xl-table-cell">{{if .DNSZone}}<span class="font-monospace">{{.DNSZone}}</span>{{else}}<span class="text-body-tertiary">–</span>{{end}}</td>
 				<td data-label="{{$.T "ipam64.col.usage"}}">{{if or .IsV4 .Container .MarkFull}}<div class="d-flex align-items-center gap-2"><div class="ipam-bar" role="img" aria-label="{{$.Float .Pct 0}} %"><span class="{{if ge .Pct 95.0}}ipam-bar-full{{else if ge .Pct 80.0}}ipam-bar-warn{{end}}" style="width: {{pct .Pct}}%"></span></div><span class="text-body-secondary">{{$.Float .Pct 0}} %</span></div>{{else}}<span class="text-body-secondary">{{$.T "ipam64.used_n" "n" .Used}}</span>{{end}}</td>
 				<td data-label="{{$.T "ipam64.kpi.conflicts"}}" class="text-end">{{if .Conflicts}}<a class="badge text-bg-danger text-decoration-none" href="/ipam64/prefix?p={{.CIDR}}&amp;kind=conflict">{{.Conflicts}}</a>{{else}}<i class="bi bi-check-circle text-success"></i>{{end}}</td>
@@ -101,4 +101,45 @@
 	</div>
 </details>
 {{end}}
+
+<details class="card mt-3" id="ipam-sources"{{if $d.Sources}} open{{end}}>
+	<summary class="card-header small"><i class="bi bi-router text-primary"></i> {{.T "ipam64.sources.title"}}{{if $d.Sources}} <span class="badge text-bg-light border">{{len $d.Sources}}</span>{{end}}</summary>
+	{{if $d.Sources}}
+	<div class="table-responsive">
+		<table class="table table-sm align-middle mb-0 small table-stack">
+			<thead><tr><th>{{.T "ipam64.sources.col_source"}}</th><th>{{.T "ipam64.sources.col_updated"}}</th><th>{{.T "ipam64.sources.col_nets"}}</th><th>{{.T "ipam64.sources.col_fixed"}}</th><th>{{.T "ipam64.sources.col_leases"}}</th><th></th></tr></thead>
+			<tbody>
+				{{range $d.Sources}}
+				<tr>
+					<td data-label="{{$.T "ipam64.sources.col_source"}}"><span class="fw-semibold">{{.Label}}</span> <span class="font-monospace text-body-secondary">{{.Name}}</span></td>
+					<td data-label="{{$.T "ipam64.sources.col_updated"}}" class="text-nowrap"><span title="{{$.Time .UpdatedAt}}">{{$.Ago .UpdatedAt}}</span>{{if .Stale}} <span class="badge text-bg-warning">{{$.T "ipam64.sources.stale"}}</span>{{end}}</td>
+					<td data-label="{{$.T "ipam64.sources.col_nets"}}">{{.Networks}}</td>
+					<td data-label="{{$.T "ipam64.sources.col_fixed"}}">{{.Reservations}}</td>
+					<td data-label="{{$.T "ipam64.sources.col_leases"}}">{{.Leases}}</td>
+					<td class="text-end">
+						<form method="post" action="/ipam64/source/delete" class="d-inline">
+							<input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="name" value="{{.Name}}">
+							<button class="btn btn-sm btn-outline-danger" type="submit" title="{{$.T "ipam64.sources.delete"}}" data-confirm="{{$.T "ipam64.sources.delete_confirm"}}"><i class="bi bi-trash"></i></button>
+						</form>
+					</td>
+				</tr>
+				{{end}}
+			</tbody>
+		</table>
+	</div>
+	{{end}}
+	<div class="card-body small">
+		<p class="mb-2">{{.T "ipam64.sources.intro"}}</p>
+		<p class="mb-1 fw-semibold">{{.T "ipam64.sources.pfsense_title"}}</p>
+		<ol class="mb-2">
+			<li>{{.T "ipam64.sources.pf1"}} <a href="/api/docs">{{.T "nav.api"}}</a></li>
+			<li><a href="/ipam64/collector/pfsense.php" id="ipam-collector-pfsense"><i class="bi bi-download"></i> {{.T "ipam64.sources.pf2_link"}}</a> {{.T "ipam64.sources.pf2"}}</li>
+			<li>{{.T "ipam64.sources.pf3"}}<pre class="mb-1 mt-1"><code>url = "http://&lt;node64&gt;:8080"
+key = "node64_..."</code></pre></li>
+			<li>{{.T "ipam64.sources.pf4"}} <code>php /root/node64-ipam.php -v</code></li>
+			<li>{{.T "ipam64.sources.pf5"}} <code>/usr/local/bin/php /root/node64-ipam.php</code></li>
+		</ol>
+		<p class="mb-0 text-body-secondary">{{.T "ipam64.sources.other"}} <code>PUT /api/ipam64/sources/{name}</code></p>
+	</div>
+</details>
 {{end}}

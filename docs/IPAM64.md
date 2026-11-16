@@ -64,6 +64,44 @@ Healthchecks, die noch auf das alte Präfix zeigen, nennt die Übersicht – bes
   eingebauten IEEE-Liste; zufällige MACs (z. B. Smartphones) werden erkannt.
 - **Benachrichtigungen** über die Standardkanäle: neue Konflikte (Standard an), neue Geräte (Standard aus).
 
+## Fremde DHCP-Server
+
+Vergibt ein Router oder eine Firewall die Adressen (statt DNS64), kennt IPAM64 die Geräte sonst nur aus der
+Nachbartabelle. Das Gerät kann seinen Stand deshalb melden; IPAM64 zeigt ihn an, ändert dort aber nichts.
+
+- **Meldung**: `PUT /api/ipam64/sources/{name}` mit einem API-Key der Node. `name` ist die Kennung der Quelle (a–z,
+  0–9, `-`, `_`). Jede Meldung ist der vollständige Stand und ersetzt den bisherigen dieser Quelle:
+
+  ```json
+  {
+    "label": "pfSense",
+    "networks": [{"subnet": "192.168.1.0/24", "name": "LAN", "interface": "igb1", "router": "192.168.1.1",
+                  "range_start": "192.168.1.100", "range_end": "192.168.1.199"}],
+    "reservations": [{"ip": "192.168.1.10", "mac": "02:64:03:00:00:0a", "name": "nas", "comment": "Synology"}],
+    "leases": [{"ip": "192.168.1.101", "mac": "02:64:03:00:00:65", "name": "macbook",
+                "expires": 1794817089, "last_seen": 1794809889}]
+  }
+  ```
+
+  Zeiten als Unix-Sekunden oder RFC 3339. Nur IPv4, Netze von /8 bis /30, ein Adressbereich je Netz. Unbekannte Felder
+  sind ein Fehler; einzelne ungültige Einträge werden übersprungen und in der Antwort gezählt (`skipped`). Höchstens
+  16 Quellen, je Quelle 64 Netze und 8192 feste Zuweisungen und Vergaben, Rumpf bis 4 MB.
+- **Wirkung**: Die Netze erscheinen wie DHCP-Netze aus DNS64 als Vorschlag bzw. als Präfix mit Adressbereich
+  (`dhcp_server` an der API). Feste Zuweisungen und Vergaben stehen als Quelle in der Belegung („Bekannt aus“), im Rang
+  der Namen direkt hinter dem DHCP-Server von DNS64. Geräte mit Lease zählen nicht mehr als unbekannt; „nächste freie
+  Adresse“ meidet den Adressbereich und das gemeldete Gateway; die Konfliktregeln (fremde MAC an einer festen Adresse, Lease gegen feste
+  Adresse) gelten auch hier. Abgelaufene Vergaben verschwinden von selbst.
+- **Grenzen**: DNS64 schreibt in diesen Netzen keine Reservierungen; der Schalter *Feste Zuweisung* ist dort aus.
+  Bedient DNS64 dasselbe Netz, gilt dessen Adressbereich. Die Meldungen bleiben je Node (kein Cluster-Abgleich). Bleibt
+  eine Quelle länger als eine Stunde stumm, zeigt die Übersicht „keine Meldung“.
+- **pfSense (DHCPv4 mit Kea)**: Die Übersicht bietet unter *Fremde DHCP-Server* ein Skript zum Herunterladen
+  (`internal/ipam64/collectors/pfsense.php`). Es liest Netze und feste Zuweisungen aus `/cf/conf/config.xml` und die
+  Vergaben aus den Lease-Dateien von Kea (Datei aus der Kea-Konfiguration; gelesen wie Kea beim Start:
+  `.completed`, sonst `.2` und `.1`, dann die Datei selbst) und ändert an der pfSense nichts. Einrichtung: Skript als
+  `/root/node64-ipam.php`, daneben `/root/node64-ipam.ini` mit `url` und `key`, Probelauf mit `-n` (nur anzeigen) bzw.
+  `-v`, dann im Paket *Cron* alle 5 Minuten. Mit ISC dhcpd meldet es Netze und feste Zuweisungen, aber keine Vergaben.
+  Geprüft mit nachgebauten Dateien (Kea 3.0, Spalten wie pfSense 2.9), noch nicht an einer echten pfSense.
+
 ## Import, Export, API
 
 - **CSV-Export** (Übersicht oder je Präfix) und **CSV-Import** mit Vorschau. Spalten Adressen: `ip, name, mac, status,

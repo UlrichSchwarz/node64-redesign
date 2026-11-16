@@ -38,7 +38,7 @@ var changelogEN string
 const Name = "ipam64"
 
 const (
-	version = "0.6.1"
+	version = "0.7.0"
 
 	setAutoScan = "ipam64.autoscan" // automatischer Netz-Scan alle n Minuten (0 = aus)
 	setLastScan = "ipam64.lastscan" // letzter Netz-Scan (Unix-Sekunden)
@@ -86,12 +86,13 @@ type Sighting struct {
 	Seen    time.Time // zuletzt sicher erreichbar (Null = unbekannt)
 }
 
-// NetHint ist ein Netz aus einer Quelle (DHCP-Netze aus DNS64).
+// NetHint ist ein Netz aus einer Quelle: ein DHCP-Netz aus DNS64 oder das Netz eines fremden DHCP-Servers (Ext gesetzt).
 type NetHint struct {
 	Name, Iface        string
 	Subnet             netip.Prefix
 	Router, Start, End netip.Addr
 	Domain             string
+	Ext, ExtLabel      string // fremder DHCP-Server: Kennung und Anzeige (sources.go)
 }
 
 // Neighbor ist ein Eintrag der Nachbartabelle: MAC und wie lange die letzte Bestaetigung her ist.
@@ -157,15 +158,30 @@ func (m *Module) SetSource(key string, f func(ctx context.Context) []Sighting) {
 // SetNetworks liefert die DHCP-Netze aus DNS64 (erscheinen ohne Zutun als Praefixe).
 func (m *Module) SetNetworks(f func(ctx context.Context) []NetHint) { m.hints = f }
 
+// hintList liefert die DHCP-Netze aus DNS64 und danach die Netze fremder DHCP-Server (ein Netz, das DNS64 schon
+// bedient, zaehlt nur dort).
 func (m *Module) hintList(ctx context.Context) []NetHint {
-	if m.hints == nil {
-		return nil
-	}
 	var out []NetHint
-	for _, h := range m.hints(ctx) {
-		if h.Subnet.IsValid() {
-			h.Subnet = h.Subnet.Masked()
-			out = append(out, h)
+	have := map[netip.Prefix]bool{}
+	if m.hints != nil {
+		for _, h := range m.hints(ctx) {
+			if h.Subnet.IsValid() {
+				h.Subnet = h.Subnet.Masked()
+				have[h.Subnet] = true
+				out = append(out, h)
+			}
+		}
+	}
+	ext, err := m.extSources(ctx)
+	if err != nil {
+		m.log.Warn("ipam64: sources", "err", err)
+	}
+	for _, src := range ext {
+		for _, h := range src.hints {
+			if h.Subnet = h.Subnet.Masked(); !have[h.Subnet] {
+				have[h.Subnet] = true
+				out = append(out, h)
+			}
 		}
 	}
 	return out

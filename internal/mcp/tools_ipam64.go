@@ -11,7 +11,7 @@ import (
 func ipam64Tools() []Tool {
 	return []Tool{
 		{Name: "ipam64_overview", Area: AreaIPAM64, Title: "IPAM64 overview", Untrusted: true,
-			Desc:   "IPAM64 prefixes (IPv4/IPv6 tree with VLAN, status, DHCP range from DNS64, DNS zone, utilisation, conflicts), address ranges and the state of the network scan.",
+			Desc:   "IPAM64 prefixes (IPv4/IPv6 tree with VLAN, status, DHCP range from DNS64 or an external DHCP server, DNS zone, utilisation, conflicts), address ranges, the state of the network scan and external DHCP servers that report to IPAM64.",
 			Schema: noArgs, Run: ipam64Overview},
 		{Name: "ipam64_addresses", Area: AreaIPAM64, Title: "IPAM64 addresses", Untrusted: true,
 			Desc: "Used addresses merged from IPAM64, DHCP, local DNS, Monitor64, Healthchecks, PROXY64 and the neighbour table: name, MAC, vendor, kind, status, state, sources, last seen.",
@@ -37,7 +37,7 @@ func ipam64Overview(c *call, _ map[string]any) (map[string]any, error) {
 	for _, e := range asArr(po["prefixes"]) {
 		p := asObj(e)
 		prefixes = append(prefixes, obj{"prefix": str(p, "prefix"), "name": clean(str(p, "name"), 64), "status": str(p, "status"), "vlan": i64(p, "vlan"),
-			"parent": str(p, "parent"), "dynamic": boolean(p, "dynamic"), "dhcp": boolean(p, "dhcp"), "pool": str(p, "pool_start") + "-" + str(p, "pool_end"),
+			"parent": str(p, "parent"), "dynamic": boolean(p, "dynamic"), "dhcp": boolean(p, "dhcp"), "dhcp_server": clean(str(p, "dhcp_server"), 64), "pool": str(p, "pool_start") + "-" + str(p, "pool_end"),
 			"dns_zone": str(p, "dns_zone"), "used": i64(p, "used"), "size": i64(p, "size"), "used_pct": p["used_pct"], "conflicts": i64(p, "conflicts"),
 			"in_ipam": str(p, "uid") != ""})
 	}
@@ -52,6 +52,15 @@ func ipam64Overview(c *call, _ map[string]any) (map[string]any, error) {
 	}
 	if so, err := c.getObj("/api/ipam64/scan", nil); err == nil {
 		out["scan"] = obj{"running": boolean(so, "running"), "prefix": str(so, "prefix"), "finished": ts(so["finished"]), "found": i64(so, "found")}
+	}
+	if so, err := c.getObj("/api/ipam64/sources", nil); err == nil { // fremde DHCP-Server (Router, Firewall), die ihren Stand melden
+		var sources []any
+		for _, e := range asArr(so["sources"]) {
+			x := asObj(e)
+			sources = append(sources, obj{"name": str(x, "name"), "label": clean(str(x, "label"), 64), "updated": ts(x["updated_at"]), "stale": boolean(x, "stale"),
+				"networks": i64(x, "networks"), "reservations": i64(x, "reservations"), "leases": i64(x, "leases")})
+		}
+		out["dhcp_sources"] = sources
 	}
 	return out, nil
 }

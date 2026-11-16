@@ -4,6 +4,8 @@ Kurz, was sich je Version ändert. Einzelheiten je Modul stehen in der Node unte
 
 ## Unveröffentlicht
 
+- IPAM64 0.7.0: Fremde DHCP-Server (Router, Firewall) können ihre Netze, festen Zuweisungen und Vergaben an IPAM64 melden; fertiges Skript für pfSense mit Kea zum Herunterladen (Vorschlag aus der Community).
+
 ## 1.7.3 – 2026-11-15
 
 - DNS64: Schutz vor DNS-Rebinding (Standard an; zeigt die eigene Domain öffentlich auf Geräte im Heimnetz, in den Einstellungen als Ausnahme eintragen); neue Heimnetz-CAs gelten nur für lokale und eigene Namen, eine vorhandene CA lässt sich per Knopf durch eine beschränkte ersetzen.

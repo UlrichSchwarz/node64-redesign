@@ -3,6 +3,7 @@ package ipam64
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -39,6 +40,9 @@ func (m *Module) apiRoutes(mux *http.ServeMux, g module.Guards) {
 	mux.Handle("GET /api/ipam64/scan", api(m.apiScanStatus))
 	mux.Handle("GET /api/ipam64/conflicts", api(m.apiConflicts))
 	mux.Handle("POST /api/ipam64/scan", api(m.apiScan))
+	mux.Handle("GET /api/ipam64/sources", api(m.apiSources))
+	mux.Handle("PUT /api/ipam64/sources/{name}", api(m.apiSourcePut))
+	mux.Handle("DELETE /api/ipam64/sources/{name}", api(m.apiSourceDelete))
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
@@ -61,7 +65,7 @@ func (m *Module) apiFail(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, ErrNotFound):
 		status = http.StatusNotFound
-	case errors.Is(err, ErrDup), errors.Is(err, ErrTaken), errors.Is(err, ErrOverlap), errors.Is(err, ErrBusy):
+	case errors.Is(err, ErrDup), errors.Is(err, ErrTaken), errors.Is(err, ErrOverlap), errors.Is(err, ErrBusy), errors.Is(err, ErrSourceLimit):
 		status = http.StatusConflict
 	}
 	writeJSON(w, status, map[string]string{"error": err.Error()})
@@ -430,4 +434,46 @@ func (m *Module) apiScan(w http.ResponseWriter, r *http.Request) {
 	}
 	m.g.Audit(r, "ipam64.scan", in.Prefix, "")
 	writeJSON(w, http.StatusAccepted, m.Scanning())
+}
+
+// ---- fremde DHCP-Server (sources.go) ----
+
+func (m *Module) apiSources(w http.ResponseWriter, r *http.Request) {
+	list, err := m.Sources(r.Context())
+	if err != nil {
+		m.apiFail(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"sources": list})
+}
+
+// apiSourcePut: ein fremder DHCP-Server meldet seinen vollstaendigen Stand (ersetzt den bisherigen der Quelle). Kommt
+// alle paar Minuten von einem Skript, deshalb ohne Eintrag im Audit-Log. Rumpf bis 4 MiB (Kern: bodyLimitFor).
+func (m *Module) apiSourcePut(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxSrcBody))
+	if err != nil {
+		writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "request body too large"})
+		return
+	}
+	in, err := DecodeSourceUpdate(body)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+	res, err := m.UpdateSource(r.Context(), r.PathValue("name"), in)
+	if err != nil {
+		m.apiFail(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, res)
+}
+
+func (m *Module) apiSourceDelete(w http.ResponseWriter, r *http.Request) {
+	name := r.PathValue("name")
+	if err := m.DeleteSource(r.Context(), name); err != nil {
+		m.apiFail(w, err)
+		return
+	}
+	m.g.Audit(r, "ipam64.source.delete", name, "")
+	writeJSON(w, http.StatusOK, map[string]string{"deleted": name})
 }
