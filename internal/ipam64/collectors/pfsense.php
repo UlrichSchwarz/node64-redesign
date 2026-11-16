@@ -31,7 +31,7 @@
  *   -v  Ergebnis ausgeben (ohne -v bleibt das Skript bei Erfolg still, damit Cron keine Mails schickt)
  */
 
-const N64_VERSION = '2';
+const N64_VERSION = '3';
 
 function n64_fail(string $msg): void
 {
@@ -146,8 +146,9 @@ function n64_lease_file(array $ini): string
  */
 function n64_read_leases(string $file, int $now): array
 {
-    if ($file === '' || !is_file($file)) {
-        return [];
+    // Jede Meldung ersetzt den Stand der Quelle: lieber gar nicht melden als ohne Vergaben (sonst waeren sie in IPAM64 weg).
+    if ($file === '' || !is_file($file) || !is_readable($file)) {
+        n64_fail('Kea-Lease-Datei fehlt oder ist nicht lesbar; es wurde nichts gesendet');
     }
     $files = is_file("$file.completed") ? ["$file.completed"] : array_filter(["$file.2", "$file.1"], 'is_file');
     $files[] = $file;
@@ -155,7 +156,7 @@ function n64_read_leases(string $file, int $now): array
     foreach ($files as $f) {
         $h = @fopen($f, 'r');
         if ($h === false) {
-            continue;
+            n64_fail('Kea-Lease-Datei nicht lesbar; es wurde nichts gesendet');
         }
         $cols = null;
         while (($line = fgets($h)) !== false) {
@@ -163,7 +164,7 @@ function n64_read_leases(string $file, int $now): array
             if ($cols === null) { // Kopfzeile: Spalten ueber den Namen finden (die Reihenfolge wechselt mit der Kea-Version)
                 $cols = array_flip($row);
                 if (!isset($cols['address'], $cols['hwaddr'], $cols['valid_lifetime'], $cols['expire'])) {
-                    break;
+                    n64_fail('Kea-Lease-Datei hat eine unbekannte Kopfzeile; es wurde nichts gesendet');
                 }
                 continue;
             }
@@ -173,6 +174,9 @@ function n64_read_leases(string $file, int $now): array
             }
         }
         fclose($h);
+        if ($cols === null && $f === $file) { // die Hauptdatei hat immer eine Kopfzeile
+            n64_fail('Kea-Lease-Datei ist leer; es wurde nichts gesendet');
+        }
     }
     $out = [];
     foreach ($last as $addr => [$row, $cols]) {
@@ -260,10 +264,9 @@ if ($backend !== '' && $backend !== 'kea') {
 } else {
     $leaseFile = n64_lease_file($ini);
     if ($leaseFile === '') {
-        $note = 'keine Lease-Datei von Kea gefunden: Netze und feste Adressen werden gemeldet, Vergaben nicht';
-    } else {
-        $leases = n64_read_leases($leaseFile, time());
+        n64_fail('keine Lease-Datei von Kea gefunden; es wurde nichts gesendet');
     }
+    $leases = n64_read_leases($leaseFile, time());
 }
 if ($note !== '' && ($verbose || $dry)) {
     fwrite(STDERR, "node64-ipam: $note\n");
@@ -292,6 +295,9 @@ if ($code !== 200) {
     n64_fail("Node64 antwortet mit $code: " . substr(trim($body), 0, 300));
 }
 $res = json_decode($body, true);
+if (!is_array($res) || !isset($res['networks'], $res['reservations'], $res['leases'])) {
+    n64_fail('Node64 lieferte eine ungueltige Antwort');
+}
 if ($verbose) {
     printf("node64-ipam: gemeldet als \"%s\": %d Netze, %d feste Adressen, %d Vergaben\n", $source, $res['networks'] ?? 0, $res['reservations'] ?? 0, $res['leases'] ?? 0);
 }

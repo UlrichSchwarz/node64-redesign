@@ -102,7 +102,8 @@ Nachbartabelle. Das Gerät kann seinen Stand deshalb melden; IPAM64 zeigt ihn an
   Vergaben aus den Lease-Dateien von Kea (Datei aus der Kea-Konfiguration; gelesen wie Kea beim Start:
   `.completed`, sonst `.2` und `.1`, dann die Datei selbst) und ändert an der pfSense nichts. Einrichtung: Skript als
   `/root/node64-ipam.php`, daneben `/root/node64-ipam.ini` mit `url` und `key`, Probelauf mit `-n` (nur anzeigen) bzw.
-  `-v`, dann im Paket *Cron* alle 5 Minuten. Mit ISC dhcpd meldet es Netze und feste Zuweisungen, aber keine Vergaben.
+  `-v`, dann im Paket *Cron* alle 5 Minuten. Mit ISC dhcpd meldet es Netze und feste Zuweisungen, aber keine Vergaben. Lässt sich die
+  Lease-Datei von Kea nicht lesen, sendet es nichts (eine Meldung ohne Vergaben würde sie in IPAM64 löschen).
   Geprüft mit nachgebauten Dateien (Kea 3.0, Spalten wie pfSense 2.9), noch nicht an einer echten pfSense.
 
 ## Import, Export, API
