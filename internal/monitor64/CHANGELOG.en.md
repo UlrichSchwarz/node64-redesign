@@ -1,5 +1,30 @@
 # Monitor64 – Changes
 
+## 0.1.23 – 2026-11-17
+
+Fixes:
+
+- SNMP profiles (e.g. QNAP): disks and volumes still went "Unknown" for a few minutes now and then, each time with an alert and an all-clear. The NAS sometimes answers its disk table without an error but empty or missing single rows – this counted as a complete answer so far, the hold of the last state from 0.1.14 only applied to tables that did not answer at all. Now every service missing in a round comes with its last state for up to 10 minutes (state kept, hint "state from … min ago"); a row without the name column no longer creates a service under the index number (#204).
+- Linux agent installation: on Raspberry Pi OS 32-bit with a 64-bit kernel (e.g. Raspberry Pi 3B+) the agent did not start ("status=31/SYS"). The installer picks the arm64 file there, whose system calls the filter `SystemCallArchitectures=native` killed right away – "native" is the architecture of systemd (32-bit), not of the kernel. The unit now also allows the architecture of the agent file; existing installations get this by running the install command again (forum 5205).
+- **Agent 0.1.11 (Linux):** systemd unit allows the architecture of the agent file (Raspberry Pi OS 32-bit with 64-bit kernel).
+
+## 0.1.22 – 2026-11-16
+
+New:
+
+- UniFi: the "UniFi" access now also queries UniFi Drive – e.g. a UNAS Pro with the same API key. Monitor64 detects which apps run on the console (Network, Drive or both). There is one service per pool (RAID level, state, redundancy, usage with threshold, running scrub or rebuild) and one per disk (state, temperature, bad and uncorrectable sectors including "rising", power-on hours, wear on SSDs, risk notes, pool membership). In addition there are services for CPU, RAM, CPU temperature, network ports and the system with UniFi OS and Drive version, uptime and throughput. Before, the access failed on a UNAS because it only knew the Network Application.
+- UniFi: the hint for a refused API key now also names the UniFi OS settings (Control Plane → Integrations).
+- Windows: "Reboot required" was permanently "yes" on many PCs with the reason "PendingFileRenameOperations". It mostly lists files Windows deletes on the next start (leftovers of installers and updates) – that needs no reboot. From agent 0.1.10 only files replaced on restart count; the reason is readable ("2 file(s) to be replaced on restart, e.g. C:\…\app.dll", "Windows components (CBS)"). Reports of older agents are translated into readable text.
+- **Agent 0.1.10 (Windows):** "Reboot required" only for file replacements, not deletions; readable reasons.
+- Intended state: when a state rule reports (e.g. "Port without link" on a port currently not in use, "Guest not running", "Reboot required"), the service dialog lets you confirm that the state is fine – "until the state changes" (once the port gets a link again, the rule applies again and a later failure reports) or "never report". Accepted states are shown in the service list and can be undone. API: `accept` when changing a service.
+
+## 0.1.21 – 2026-11-16
+
+Bug fixes:
+
+- RHEL, Oracle Linux, AlmaLinux, Rocky, Fedora (dnf): "Reboot required" was permanently "yes" and the updates reported "Read-only file system: '/var/log/dnf.log'". The agent service may not write to `/var/log`, so dnf aborted – and Monitor64 took the exit code 1 of `needs-restarting -r` as "reboot required". The agent now lets dnf log to its own folder (`/var/lib/monitor64-agent/dnf`, works without reinstalling), new installations additionally allow the existing dnf log files. If `needs-restarting` aborts with an error message, the service counts as unknown (with an error at the access) instead of "yes" – with the agent and via SSH (#169).
+- **Agent 0.1.9 (Linux):** dnf logs in its own folder; `needs-restarting` with an error message is no "reboot required".
+
 ## 0.1.20 – 2026-11-15
 
 Security:

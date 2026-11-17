@@ -6,6 +6,47 @@ Kurz, was sich je Version ändert. Einzelheiten je Modul stehen in der Node unte
 
 - IPAM64 0.7.0: Fremde DHCP-Server (Router, Firewall) können ihre Netze, festen Zuweisungen und Vergaben an IPAM64 melden; fertiges Skript für pfSense mit Kea zum Herunterladen (Vorschlag aus der Community).
 
+## 1.7.8 – 2026-11-17
+
+- Monitor64: SNMP-Werte (z. B. Platten eines QNAP-NAS) springen nicht mehr sporadisch für einige Minuten auf „Unbekannt“, wenn das Gerät eine Tabelle kurz unvollständig liefert – der letzte Stand gilt bis zu 10 Minuten (#204).
+- Monitor64: Linux-Agent 0.1.11 startet auch auf Raspberry Pi OS 32 Bit mit 64-Bit-Kernel (z. B. Raspberry Pi 3B+, vorher „status=31/SYS“); bestehende Installationen den Installationsbefehl erneut ausführen (Forum 5205).
+- PROXY64: Das CDN64-Kontingent zählt jetzt Domains und Subdomains getrennt (Free 1 Domain und 2 Subdomains, Home/Supporter 5 und 5, Business und Company 10 bzw. 25 Domains mit unbegrenzt vielen Subdomains); die Kachel zeigt beides.
+- DNS64: Die Gerätetabelle unter Gerätegruppen sortiert die Spalte „Gruppe“ nach der gewählten Gruppe (#207).
+- PROXY64: Ländersperre „nur diese Länder zulassen“ – Netze auf der Freigabeliste gelten jetzt auch, wenn Docker die Herkunft verdeckt (Forum 5189, #187).
+- Healthchecks: Übersicht, Detailseite und `/api/metrics` öffnen bei großen Datenbanken wieder sofort statt nach rund 13 s (#197).
+- Healthchecks: HTTPS- und Zertifikats-Checks vertrauen den eigenen CAs der Zertifikatsverwaltung (#190).
+- Healthchecks: Eine neu beigetretene Cluster-Node bekommt auch die schon vorhandenen Checks (#194).
+- Healthchecks: Der Statusseiten-Editor scrollt beim Verschieben per Maus am Rand mit (#196).
+- Benachrichtigungen: SMTP meldet sich bei Servern, die nur `AUTH LOGIN` anbieten (z. B. Hosted Exchange), mit LOGIN an statt mit „5.7.4 Unrecognized authentication type“ abzubrechen (#205).
+- Einstellungen: Unter „Mein Konto“ erscheint der Knopf „Passkey anlegen“ wieder (#206).
+- Environment: Hilfe-Symbol mit Link zur Doku auf den Seiten Environment, Zugänge und Node hinzufügen (Forum 5193).
+
+## 1.7.7 – 2026-11-17
+
+- PROXY64: Live-Anzeigen hingen seit 1.7.6 (z. B. Dockhand-Live-Status und -Logs, Server-Sent Events und Streams über HTTP/2) – behoben (Forum 5202; CDN64 Modus 2 und 3 mit cdn64-edge 0.22.7).
+- CDN64-Server (cdn64-edge 0.22.6, schon ausgerollt): UDP-Portmapper (z. B. WireGuard) – Downloads kamen in allen Modi oft gar nicht oder nur mit wenigen Mbit/s in Gang (Forum 5110); der Reflexionsschutz würgt den Anlauf nicht mehr ab.
+- Monitor64: Windows-Agent 0.1.10 – „Neustart nötig“ steht nicht mehr dauerhaft auf „ja“, nur weil Windows beim nächsten Start Dateireste löschen will (PendingFileRenameOperations); der Grund ist lesbar.
+- Monitor64: Zustand gewollt – meldet z. B. „Port ohne Link“ an einem ungenutzten Port, lässt sich im Dienst-Dialog bestätigen, dass das in Ordnung ist: bis sich der Zustand ändert oder dauerhaft. Gilt für alle Zustandsregeln.
+- Monitor64: Der UniFi-Zugang überwacht jetzt auch UniFi Drive, z. B. eine UNAS Pro mit API-Schlüssel – Pools, Platten (Zustand, Temperatur, Sektoren), CPU, RAM, Netz-Ports und System. Monitor64 erkennt selbst, ob Network, Drive oder beides läuft.
+
+## 1.7.6 – 2026-11-16
+
+- PROXY64: Uploads über CDN64 brachen im Speedtest nach kurzer Zeit bis auf fast null ein (z. B. OpenSpeedTest hinter nginx, in Chrome und Firefox, über HTTP/2 und HTTP/3) – behoben. HTTP/3 über CDN64 läuft außerdem in beide Richtungen gleichmäßiger.
+
+## 1.7.5 – 2026-11-16
+
+- Einstellungen: neue Seite „Mein Konto“ für jeden Benutzer mit Sprache, Zeitzone, Passwort, Darstellung, Zwei-Faktor-Anmeldung, Passkeys und SSO-Verknüpfungen (vorher unter „Allgemein“; erreichbar auch über den Benutzernamen oben rechts). Die Update-Einstellungen stehen wieder in einer Zeile.
+- DNS64: DHCP-Netz einfacher anlegen – Schnittstelle aus einer Liste, das Netz wird vorbelegt, Adressbereich und Router wandern mit dem Netz mit.
+- Installation ohne Docker: Debian-Paket (`.deb`) für amd64, arm64 und armhf – Systemdienst `node64` unter eigenem Benutzer, Daten in `/var/lib/node64`, Einstellungen in `/etc/default/node64`; Download am GitHub-Release (`releases/latest/download/node64_amd64.deb`) und unter ipv64.net/node64/deb/.
+
+## 1.7.4 – 2026-11-16
+
+- Monitor64: Unter RHEL, Oracle Linux und anderen Systemen mit dnf steht „Neustart nötig“ nicht mehr dauerhaft auf „ja“, und die Updates scheitern nicht mehr an „Read-only file system“ (Agent 0.1.9, auch per SSH, #169).
+- Healthchecks: Whois-Check für .ch- und .li-Domains funktioniert (Blockformat der Registry SWITCH, RDAP-Server ohne IANA-Eintrag, #170).
+- DNS64: Umschreiben mit einer IP-Adresse als Ziel liefert wieder die Adresse statt NXDOMAIN (IPv4 für A, IPv6 für AAAA, #174).
+- IPAM64: eigenes Logo in der Übersicht, auf dem Dashboard und unter Einstellungen → Module.
+- PROXY64 1.56.6 (Sicherheit): Anfragen über das Docker-Gateway (Bridge-Netz) gelten nicht mehr als Heimnetz – Zugriffslisten mit privaten Netzen, „nur eigenes Netz“ und die Heimnetz-Ausnahme der Limits greifen für sie nicht; ein Hinweis empfiehlt `network_mode: host`.
+
 ## 1.7.3 – 2026-11-15
 
 - DNS64: Schutz vor DNS-Rebinding (Standard an; zeigt die eigene Domain öffentlich auf Geräte im Heimnetz, in den Einstellungen als Ausnahme eintragen); neue Heimnetz-CAs gelten nur für lokale und eigene Namen, eine vorhandene CA lässt sich per Knopf durch eine beschränkte ersetzen.

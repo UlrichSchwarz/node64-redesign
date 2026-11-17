@@ -11,7 +11,11 @@ Neu (Vorschlag aus der Community):
 - Ereignisse: Die Node vergleicht jede Meldung eines DHCP-Servers mit der vorigen und hält fest, was sich geändert hat – neue Vergabe, Vergabe abgelaufen oder zurückgegeben, anderes Gerät an der Adresse, feste Zuweisung angelegt, geändert oder entfernt, Netz neu oder weg. Seite *IPAM64 → Ereignisse* mit Filter nach Art, Präfix und Suche, die letzten Ereignisse an der Adresse, API `GET /api/ipam64/events`. 90 Tage, höchstens 5000 Einträge.
 - Übersicht: Karte „Fremde DHCP-Server“ mit Stand je Quelle (zuletzt gemeldet, Netze, feste Zuweisungen, Vergaben), Entfernen und Anleitung je System zur Auswahl (pfSense mit Skript; für OPNsense, OpenWrt, Pi-hole, FRITZ!Box, MikroTik, UniFi, Kea, ISC dhcpd und Windows Server Hinweise und ein fertiges API-Beispiel mit der Adresse der Node). API: `GET /api/ipam64/sources`, `DELETE /api/ipam64/sources/{name}`; Präfixe nennen den Server in `dhcp_server`.
 
-## 0.6.1 – unveröffentlicht
+## 0.6.2 – 2026-11-15
+
+- Eigenes Logo (hell und dunkel) in der Übersicht, auf dem Dashboard und unter Einstellungen → Module.
+
+## 0.6.1 – 2026-11-15
 
 Behoben (Code-Review):
 

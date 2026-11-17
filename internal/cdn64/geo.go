@@ -16,6 +16,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/ipv64net/node64/internal/dns64/localnet"
 	"github.com/ipv64net/node64/internal/geoip"
 	"github.com/ipv64net/node64/internal/shield"
 )
@@ -125,16 +126,25 @@ func (m *Module) geoBlockedBy(mode string, countries []string, ip netip.Addr) bo
 		return false
 	}
 	ip = ip.Unmap()
-	if !ip.IsValid() || !ip.IsGlobalUnicast() || ip.IsPrivate() || cgnat.Contains(ip) {
-		return false
-	}
 	g := &m.bl.geo
 	g.mu.RLock()
 	defer g.mu.RUnlock()
+	// Ausnahmen zuerst: Wer ein Netz ausdruecklich freigibt (z. B. das Docker-Netz), meint auch das Gateway darin
+	// (Forum 5189 - vorher wies "nur zulassen" das Gateway trotz Ausnahme ab)
 	for _, p := range g.allow {
-		if p.Contains(ip) {
+		if ip.IsValid() && p.Contains(ip) {
 			return false
 		}
+	}
+	if !ip.IsValid() || localnet.MaskedGateway(ip) { // Herkunft unbekannt (Docker-Gateway): "nur zulassen" sperrt
+		if mode == geoAllow {
+			g.blocked.Add(1)
+			return true
+		}
+		return false
+	}
+	if !ip.IsGlobalUnicast() || ip.IsPrivate() || cgnat.Contains(ip) {
+		return false
 	}
 	if cc, ok := geoLocate(ip); ok { // Standort bekannt: nur er zaehlt (#139)
 		block := slices.Contains(countries, cc)

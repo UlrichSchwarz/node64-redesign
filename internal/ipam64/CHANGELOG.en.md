@@ -11,7 +11,11 @@ New (community proposal):
 - Events: the node compares each report of a DHCP server with the previous one and records what changed – new lease, lease expired or released, different device on the address, fixed assignment created, changed or removed, network new or gone. Page *IPAM64 → Events* with filter by kind, prefix and search, the latest events on the address page, API `GET /api/ipam64/events`. 90 days, at most 5000 entries.
 - Overview: card "External DHCP servers" with the state per source (last report, networks, fixed assignments, leases), removal and a guide per system to choose from (pfSense with a script; for OPNsense, OpenWrt, Pi-hole, FRITZ!Box, MikroTik, UniFi, Kea, ISC dhcpd and Windows Server hints and a ready-made API example with the node's address). API: `GET /api/ipam64/sources`, `DELETE /api/ipam64/sources/{name}`; prefixes name the server in `dhcp_server`.
 
-## 0.6.1 – unreleased
+## 0.6.2 – 2026-11-15
+
+- Own logo (light and dark) in the overview, on the dashboard and under Settings → Modules.
+
+## 0.6.1 – 2026-11-15
 
 Fixed (code review):
 

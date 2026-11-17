@@ -1,5 +1,30 @@
 # Monitor64 – Änderungen
 
+## 0.1.23 – 2026-11-17
+
+Fehlerbehebungen:
+
+- SNMP-Profile (z. B. QNAP): Platten und Volumes standen weiterhin sporadisch für einige Minuten auf „Unbekannt“, jedes Mal mit Alarm und Entwarnung. Das NAS beantwortet seine Plattentabelle zeitweise ohne Fehler, aber leer oder ohne einzelne Zeilen – das galt bisher als vollständige Antwort, das Halten des letzten Stands aus 0.1.14 griff nur bei ganz ausbleibenden Tabellen. Jetzt kommt jeder Dienst, der in einer Runde fehlt, bis zu 10 Minuten mit seinem letzten Stand (Zustand bleibt, Hinweis „Stand von vor … Min.“); eine Zeile ohne Namensspalte legt keinen Dienst unter der Indexnummer mehr an (#204).
+- Linux-Agent-Installation: Auf Raspberry Pi OS 32 Bit mit 64-Bit-Kernel (z. B. Raspberry Pi 3B+) startete der Agent nicht („status=31/SYS“). Der Installer wählt dort die arm64-Datei, deren Systemaufrufe der Filter `SystemCallArchitectures=native` sofort beendete – „native“ ist die Architektur von systemd (32 Bit), nicht die des Kernels. Die Unit erlaubt jetzt zusätzlich die Architektur der Agent-Datei; bestehende Installationen bekommen das mit einem erneuten Installationsbefehl (Forum 5205).
+- **Agent 0.1.11 (Linux):** systemd-Unit erlaubt die Architektur der Agent-Datei (Raspberry Pi OS 32 Bit mit 64-Bit-Kernel).
+
+## 0.1.22 – 2026-11-16
+
+Neu:
+
+- UniFi: Der Zugang „UniFi“ fragt jetzt auch UniFi Drive ab – z. B. eine UNAS Pro mit demselben API-Schlüssel. Monitor64 erkennt selbst, welche Apps auf der Konsole laufen (Network, Drive oder beides). Dazu kommen je Pool ein Dienst (RAID-Stufe, Zustand, Redundanz, Belegung mit Schwelle, laufende Prüfung bzw. Wiederherstellung) und je Platte einer (Zustand, Temperatur, defekte und nicht korrigierbare Sektoren samt „steigen“, Betriebsstunden, Verschleiß bei SSDs, Risiko-Hinweise, Pool-Zugehörigkeit). Außerdem gibt es Dienste für CPU, RAM, CPU-Temperatur, Netz-Ports und das System mit UniFi-OS- und Drive-Version, Laufzeit und Durchsatz. Bisher scheiterte der Zugang auf einer UNAS, weil er nur die Network Application kannte.
+- UniFi: Der Hinweis bei einem abgelehnten API-Schlüssel nennt jetzt auch die UniFi-OS-Einstellungen (Control Plane → Integrations).
+- Windows: „Neustart nötig“ stand auf vielen PCs dauerhaft auf „ja“ mit dem Grund „PendingFileRenameOperations“. Dort stehen meist nur Dateien, die Windows beim nächsten Start löscht (Reste von Installern und Updates) – das braucht keinen Neustart. Ab Agent 0.1.10 zählen nur Dateien, die beim Neustart ersetzt werden; der Grund steht lesbar da („2 Datei(en) werden beim Neustart ersetzt, z. B. C:\…\app.dll“, „Windows-Komponenten (CBS)“). Meldungen älterer Agents werden lesbar übersetzt.
+- **Agent 0.1.10 (Windows):** „Neustart nötig“ nur bei Dateiersetzungen, nicht bei Löschungen; Gründe lesbar.
+- Zustand gewollt: Meldet eine Zustandsregel (z. B. „Port ohne Link“ an einem gerade ungenutzten Port, „Gast läuft nicht“, „Neustart nötig“), lässt sich im Dienst-Dialog bestätigen, dass der Zustand in Ordnung ist – „bis sich der Zustand ändert“ (bekommt der Port wieder Link, gilt die Regel wieder und ein späterer Ausfall meldet) oder „dauerhaft nicht melden“. Bestätigte Zustände stehen in der Diensteliste und lassen sich aufheben. API: `accept` beim Ändern eines Dienstes.
+
+## 0.1.21 – 2026-11-16
+
+Fehlerbehebungen:
+
+- RHEL, Oracle Linux, AlmaLinux, Rocky, Fedora (dnf): „Neustart nötig“ stand dauerhaft auf „ja“ und die Updates meldeten „Read-only file system: '/var/log/dnf.log'“. Der Agent-Dienst darf nicht nach `/var/log` schreiben, dnf brach deshalb ab – und den Exit-Code 1 von `needs-restarting -r` wertete Monitor64 als „Neustart nötig“. Der Agent lässt dnf jetzt in seinen eigenen Ordner loggen (`/var/lib/monitor64-agent/dnf`, wirkt ohne Neuinstallation), neue Installationen geben zusätzlich die vorhandenen dnf-Logdateien frei. Bricht `needs-restarting` mit einer Fehlermeldung ab, gilt der Dienst als unbekannt (mit Fehler am Zugang) statt „ja“ – beim Agent und per SSH (#169).
+- **Agent 0.1.9 (Linux):** dnf-Logs im eigenen Ordner; `needs-restarting` mit Fehlermeldung ist kein „Neustart nötig“.
+
 ## 0.1.20 – 2026-11-15
 
 Sicherheit:

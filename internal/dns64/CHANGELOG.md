@@ -1,6 +1,21 @@
 # Änderungen – DNS64
 
-## 1.42.0 – unveröffentlicht
+## 1.43.1 – 2026-11-17
+
+### Behoben
+- Gerätegruppen: Die Gerätetabelle sortiert die Spalte „Gruppe“ jetzt nach der gewählten Gruppe statt nach dem Text aller Auswahlmöglichkeiten; Geräte ohne Gruppe stehen zusammen, ein zweiter Klick dreht die Reihenfolge um (#207).
+
+## 1.43.0 – 2026-11-16
+
+### Neu
+- DHCP-Netz anlegen und bearbeiten ist einfacher: Die Schnittstelle wählst du aus einer Liste dieser Node (Name und Adresse, z. B. „eth0 – 192.168.1.20/24“; Docker-, VPN- und VM-Schnittstellen nur über „Sonstige …“ mit Textfeld). Eine gespeicherte Schnittstelle, die es gerade nicht gibt, bleibt als „(nicht gefunden)“ sichtbar. Die gewählte Schnittstelle belegt das Netz vor; ändert sich das Netz, wandern Adressbereich und Router mit (gleiche Host-Anteile, bei kleineren Netzen begrenzt). Von Hand geänderte Felder bleiben stehen und bekommen einen Hinweis, wenn sie nicht mehr ins Netz passen. Ohne JavaScript bleibt das Textfeld.
+
+## 1.42.1 – 2026-11-16
+
+### Behoben
+- Umschreiben mit einer IP-Adresse als Ziel (z. B. *.example.de → 192.168.1.10) lieferte NXDOMAIN. Jetzt beantwortet eine IPv4-Adresse A, eine IPv6-Adresse AAAA, andere Typen kommen ohne Antwort (kein NXDOMAIN); IPv6-Adressen sind als Ziel jetzt auch erlaubt (#174).
+
+## 1.42.0 – 2026-11-15
 
 ### Neu
 - Schutz vor DNS-Rebinding (Einstellungen, Standard an): Antworten aus dem Internet liefern für öffentliche Namen keine Adressen aus dem Heimnetz mehr (privat, ULA, Loopback, Link-Local). Ausgenommen sind eigene Einträge, lokale Zonen und Namen, Weiterleitungen, Freigaben, ipv64-Domains, plex.direct, die Endungen der Docker-Labels und eigene Endungen („Weitere Endungen ohne Rebinding-Schutz“, im Cluster abgeglichen). Das Abfrage-Log zeigt „Rebinding-Schutz“, „Freigeben“ hebt ihn für den Namen auf. Zeigt deine eigene Domain öffentlich auf Geräte im Heimnetz, trag sie dort ein.

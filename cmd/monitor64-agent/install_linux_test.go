@@ -5,6 +5,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -35,6 +36,20 @@ func TestUnitText(t *testing.T) {
 	}
 }
 
+// Forum 5205: Raspberry Pi OS 32 Bit mit 64-Bit-Kernel - systemd (armhf) beendete die arm64-Datei bei
+// SystemCallArchitectures=native sofort (status=31/SYS). Die Architektur der Datei ist zusaetzlich erlaubt.
+func TestUnitSyscallArch5205(t *testing.T) {
+	u := unitText(6465, false)
+	if !strings.Contains(u, "\nSystemCallArchitectures=native"+sysArch(runtime.GOARCH)+"\n") {
+		t.Errorf("SystemCallArchitectures:\n%s", u)
+	}
+	for goarch, want := range map[string]string{"arm64": " arm64", "arm": " arm", "amd64": " x86-64", "386": " x86", "mips": ""} {
+		if got := sysArch(goarch); got != want {
+			t.Errorf("%s: %q, erwartet %q", goarch, got, want)
+		}
+	}
+}
+
 // F1-K5: Probestart der neuen Datei.
 func TestProbe(t *testing.T) {
 	exe := filepath.Join(t.TempDir(), "agent")
@@ -56,5 +71,19 @@ func TestProbe(t *testing.T) {
 	}
 	if err := probe(broken, "1.2.3"); err == nil {
 		t.Fatal("broken file accepted")
+	}
+}
+
+// #169: dnf schreibt Logs unter /var/log - die vorhandenen Dateien sind freigegeben (mit "-": fehlen sie, startet der
+// Dienst trotzdem); der Agent laesst dnf ausserdem in den eigenen Ordner loggen (wirkt ohne neue Unit).
+func TestUnitTextDnfLogs169(t *testing.T) {
+	u := unitText(6465, false)
+	for _, f := range []string{"dnf.log", "dnf.librepo.log", "dnf.rpm.log", "hawkey.log", "dnf5.log"} {
+		if !strings.Contains(u, " -/var/log/"+f) && !strings.Contains(u, "=-/var/log/"+f) {
+			t.Errorf("unit ohne -/var/log/%s", f)
+		}
+	}
+	if strings.Contains(u, "ReadWritePaths=/var/log") || strings.Contains(u, " /var/log ") {
+		t.Error("ganz /var/log freigegeben")
 	}
 }

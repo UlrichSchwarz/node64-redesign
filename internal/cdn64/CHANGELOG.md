@@ -1,5 +1,29 @@
 # Änderungen – PROXY64
 
+## 1.56.9 – 2026-11-17
+
+### Behoben
+- Ländersperre „nur diese Länder zulassen“: Netze auf der Freigabeliste gelten jetzt auch für Zugriffe, deren Herkunft Docker verdeckt (Gateway des Bridge-Netzes, Forum 5189). Für die echte Herkunft der Besucher bleibt `network_mode: host` der richtige Weg (#187).
+
+### Geändert
+- CDN64-Kontingent: ipv64.net zählt CDN64-Namen jetzt nach Domains und Subdomains (z. B. `test.ipv64.de` = 1 Domain, `nas.test.ipv64.de` = 1 Subdomain; Free 1 Domain und 2 Subdomains, Home/Supporter 5 und 5, Business und Company 10 bzw. 25 Domains mit unbegrenzt vielen Subdomains). Die Kachel CDN-Domains zeigt die Subdomains mit an.
+
+## 1.56.8 – 2026-11-17
+
+### Behoben
+- Live-Anzeigen hingen seit 1.7.6 (Forum 5202, z. B. Dockhand: Live-Status, Logs): Antworten auf Anfragen ohne Upload blieben über HTTP/2 bis zum Ende bzw. 64 KB liegen – Server-Sent Events und Streams kamen nicht an. HTTP/2 liefert auch einem GET ohne Inhalt einen leeren Upload, den die Behebung für den Speedtest-Upload aus 1.56.7 fälschlich abwartete. Jetzt gilt nur ein echter Upload als Upload, und Event-Streams gehen immer sofort durch. Für Namen in CDN64 Modus 2 und 3 behebt cdn64-edge 0.22.7 dasselbe.
+
+## 1.56.7 – 2026-11-16
+
+### Behoben
+- Uploads brachen ab, wenn das Ziel schon antwortet, bevor es den Upload gelesen hat – so macht es z. B. nginx bei OpenSpeedTest (POST auf eine Datei gibt sofort 200). Über HTTP/2 und HTTP/3 schloss PROXY64 dann den Upload des Browsers, der Speedtest zeigte einen Upload, der bis auf fast null einbrach. Firefox hört zudem schon auf zu senden, sobald die Antwort vollständig da ist. Jetzt hält PROXY64 eine solche frühe, kleine Antwort zurück, liest den Upload zu Ende (verworfen wie bei nginx, höchstens 1 GiB bzw. 30 Sekunden; zählt und bremst wie jeder Upload) und schickt die Antwort erst danach – für jeden Browser sieht das aus wie ein Ziel, das erst liest und dann antwortet. Für Namen in Modus 2 und 3 behebt cdn64-edge 0.22.5 dasselbe auf den CDN64-Servern.
+- HTTP/3 über CDN64 (Modus 1): Uploads (z. B. im Speedtest) brachen nach kurzer Zeit bis auf fast null ein. Nach der MTU-Erkennung schickt der Browser größere Pakete, als in ein Datagramm des Tunnels passen; die gingen dann über den Stream und kamen in anderer Reihenfolge an, was der Browser für Verlust hielt. Jetzt verhält sich der Tunnel nach dem Handshake wie eine Leitung mit kleinerer MTU: zu große Pakete werden verworfen, der Browser bleibt bei passenden Paketen. Im Labor (30 ms, ohne Verlust) stieg der Upload über HTTP/3 von rund 3 auf über 450 Mbit/s. Die Behebung für den Upload sitzt auf den CDN64-Servern (cdn64-edge 0.22.3), diese Version zieht den Download nach.
+
+## 1.56.6 – 2026-11-15
+
+### Geändert
+- Sicherheit (Docker-Bridge-Netz): Kommen Anfragen mit der Adresse des Docker-Gateways an (Userland-Proxy, IPv6 ohne ip6tables, manche NAS, Zugriffe vom Docker-Host), ist ihre Herkunft unbekannt – sie können auch aus dem Internet stammen. PROXY64 wertet sie nicht mehr als Heimnetz: Einträge mit privaten Netzen in Zugriffslisten, „nur eigenes Netz“ der Oberfläche unter eigenem Namen und die Ausnahme „Heimnetz“ der Limits greifen nicht; eine Ländersperre „nur zulassen“ weist sie ab. Die Seite Proxy-Hosts zeigt dann einen Hinweis. Abhilfe: Container mit `network_mode: host` starten – bei Docker mit Userland-Proxy (z. B. auf manchen NAS) betrifft das sonst alle Geräte im Heimnetz.
+
 ## 1.56.5 – 2026-11-15
 
 ### Behoben

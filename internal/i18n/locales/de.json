@@ -108,6 +108,7 @@
     "sonar64": "Sonar64",
     "monitor64": "Monitor64",
     "settings_general": "Allgemein",
+    "settings_account": "Mein Konto",
     "settings_ports": "Ports",
     "settings_data": "Daten & Sicherung",
     "settings_modules": "Module",
@@ -539,6 +540,7 @@
     "edge_error": "Der gemeinsame Eingang kann einen Port nicht öffnen:",
     "pub_missing": "Docker-Bridge-Netz: PROXY64 lauscht im Container, aber Port {ports} ist auf dem Docker-Host nicht veröffentlicht – von außen kommt hier nichts an. Beim Start des Containers ergänzen:",
     "pub_more": "Beispiel für docker compose und Host-Netz",
+    "gw_masked": "Docker-Bridge-Netz: Anfragen kamen mit der Adresse des Docker-Gateways an – ihre echte Herkunft ist unbekannt, sie können auch aus dem Internet stammen (Userland-Proxy, IPv6 ohne ip6tables, manche NAS, Zugriffe vom Docker-Host). PROXY64 wertet sie deshalb nicht als Heimnetz: Einträge mit privaten Netzen in Zugriffslisten und die Ausnahme „Heimnetz“ der Limits greifen nicht, eine Ländersperre „nur zulassen“ weist sie ab. Läuft Docker mit Userland-Proxy (z. B. auf manchen NAS), kommen so alle Geräte im Heimnetz an. Abhilfe: Container mit network_mode: host starten.",
     "edge_settings": "Ports einstellen",
     "f": {
       "names": "Domains",
@@ -1232,6 +1234,8 @@
       "servers_hint": "Gilt nur für diesen Proxy-Host. DNS und Tunnel stellen sich binnen Minuten um, die bleibenden Verbindungen laufen weiter.",
       "servers_saved": "Gespeichert: {list} mit {n} Verbindung(en) je Server. DNS und Tunnel stellen sich binnen Minuten um.",
       "servers_failed": "Server-Anzahl nicht gespeichert: {error}",
+      "q_sub": "Subdomains: {used} von {limit}",
+      "q_sub_free": "Subdomains: {used} (unbegrenzt)",
       "q_old": "{n} davon im alten CDN",
       "q_bw_free": "Bandbreite unbegrenzt",
       "q_short": "Reicht bei gleichem Verbrauch nur bis etwa {date} (Prognose {n} im Monat).",
@@ -3841,6 +3845,7 @@
       "scope_edit": "Netz bearbeiten",
       "iface": "Schnittstelle",
       "iface_hint": "Netzwerkkarte bzw. VLAN des Hosts, z. B. eth0 oder eth0.20. Je Schnittstelle ein Netz.",
+      "iface_other": "Sonstige …",
       "subnet": "Netz",
       "range": "Adressbereich",
       "range_from": "von",
@@ -4038,7 +4043,7 @@
       "rw_edit": "Umschreiben bearbeiten",
       "rw_name": "Name",
       "rw_target": "antwortet wie",
-      "rw_hint": "DNS64 löst das Ziel selbst auf und antwortet unter dem gefragten Namen (ohne CNAME). *.example.com gilt für alle Namen darunter.",
+      "rw_hint": "Ziel ist ein Name oder eine IP-Adresse. Einen Namen löst DNS64 selbst auf und antwortet unter dem gefragten Namen (ohne CNAME); eine IPv4-Adresse beantwortet A, eine IPv6-Adresse AAAA. *.example.com gilt für alle Namen darunter.",
       "rw_none": "Noch nichts umgeschrieben.",
       "rw_added": "Umschreiben angelegt, gilt sofort."
     },
@@ -4375,7 +4380,9 @@
       "lookup_group_block": "Sperre der Gruppe {group}: {entry}",
       "lookup_service": "Dienst {svc} (in Gruppen sperrbar)",
       "lookup_cat": "Kategorie {cat} (in Gruppen sperrbar)",
-      "lookup_none": "In keiner Liste und keiner Regel."
+      "lookup_none": "In keiner Liste und keiner Regel.",
+      "dhcp_iface_missing": "{name} (nicht gefunden)",
+      "dhcp_outside": "Liegt nicht im Netz {net} – bitte anpassen."
     },
     "retrying": "Neuer Versuch jede Minute; Port oder Adresse lassen sich unter Einstellungen ändern.",
     "custom": "eigene",
@@ -4596,7 +4603,7 @@
       "name": "Ungültiger Name.",
       "ip_a": "Für A wird eine IPv4-Adresse gebraucht.",
       "ip_aaaa": "Für AAAA wird eine IPv6-Adresse gebraucht.",
-      "target": "Ungültiger Zielname.",
+      "target": "Ungültiges Ziel (Name oder IP-Adresse).",
       "type": "Unbekannter Typ.",
       "dup": "Diesen Eintrag gibt es schon.",
       "cname": "Ein CNAME steht allein: kein weiterer Eintrag für denselben Namen.",
@@ -6302,7 +6309,8 @@
       "more_rules": "+{n} weitere",
       "pending_state": "{s} ab {t} ({k})",
       "address_secret_title": "Neue Adresse",
-      "address_secret_ok": "Speichern und Geheimnisse entfernen"
+      "address_secret_ok": "Speichern und Geheimnisse entfernen",
+      "accepted_state": "{k}: gewollt, bis sich der Zustand ändert"
     },
     "acc": {
       "type": "Art",
@@ -6461,7 +6469,17 @@
       "traps_handled": "abgefragt",
       "traps_handled_hint": "Bekannter Trap: sofortige Abfrage, der Zustand kommt aus der Abfrage.",
       "traps_values": "{n} Werte",
-      "traps_none": "Noch keine Traps empfangen."
+      "traps_none": "Noch keine Traps empfangen.",
+      "accept_title": "Zustand gewollt?",
+      "accept_q": "„{k}“ meldet gerade. Ist dieser Zustand in Ordnung?",
+      "accept_change": "In Ordnung, bis sich der Zustand ändert",
+      "accept_always": "Dauerhaft nicht melden",
+      "accept_hint": "„Bis sich der Zustand ändert“: Wird der Zustand wieder normal (z. B. der Port bekommt Link), gilt die Regel wieder – ein späterer Ausfall meldet. „Dauerhaft“: Die Regel meldet an diesem Dienst nichts mehr, bis du es zurücknimmst.",
+      "accepted_change": "„{k}“ gilt als in Ordnung, bis sich der Zustand ändert",
+      "accepted_always": "„{k}“ wird an diesem Dienst dauerhaft nicht gemeldet",
+      "accept_clear": "Aufheben",
+      "accept_toast": "Zustand als in Ordnung übernommen",
+      "accept_cleared_toast": "Ausnahme aufgehoben"
     },
     "f": {
       "name": "Name",
@@ -6875,7 +6893,7 @@
       "hint_mikrotik": "Für RouterOS ab Version 7 (REST-API über HTTPS). Auf dem Router einen eigenen Benutzer in einer Gruppe mit nur read, api und rest-api anlegen und dem Dienst www-ssl ein Zertifikat geben – ohne Zertifikat nimmt RouterOS keine HTTPS-Verbindung an. Die Befehle unten erledigen beides (im Terminal des Routers). Das Zertifikat ist selbst signiert – den Fingerabdruck beim Test bestätigen. Monitor64 liest nur und stößt nichts an; ob ein Update bereitsteht, zeigt der Router erst, nachdem er selbst gesucht hat. RouterOS 6 hat keine REST-API – dort SNMP verwenden.",
       "dev_cmd": "Auf dem Gerät einrichten",
       "cmd_password": "Passwort",
-      "hint_unifi": "Für die UniFi Network Application auf einer UniFi-OS-Konsole (UDM, UDR, UCG, Cloud Key, UniFi OS Server) oder als selbst gehosteter Network Server. Am einfachsten mit API-Schlüssel: in UniFi Network unter „Integrations“ (bei Network 9 unter Einstellungen → Control Plane → Integrations) einen Schlüssel anlegen, hier als Geheimnis eintragen und den Benutzer leer lassen – das geht nur auf UniFi OS. Sonst einen lokalen Admin mit der Rolle „View Only“ anlegen („Restrict to local access only“, ohne Zwei-Faktor-Anmeldung) und Benutzer und Passwort eintragen; beim selbst gehosteten Server gehört der Port in die URL (meist 8443). Monitor64 liest nur. Das Zertifikat ist meist selbst signiert – den Fingerabdruck beim Test bestätigen.",
+      "hint_unifi": "Für UniFi-OS-Konsolen: die UniFi Network Application (UDM, UDR, UCG, Cloud Key, UniFi OS Server, auch selbst gehostet) und UniFi Drive auf einer UNAS (Pools, Platten, System) – Monitor64 erkennt selbst, was läuft. Am einfachsten mit API-Schlüssel: in den UniFi-OS-Einstellungen unter Control Plane → Integrations bzw. in UniFi Network unter „Integrations“ einen Schlüssel anlegen, hier als Geheimnis eintragen und den Benutzer leer lassen – das geht nur auf UniFi OS. Sonst einen lokalen Admin mit der Rolle „View Only“ anlegen („Restrict to local access only“, ohne Zwei-Faktor-Anmeldung) und Benutzer und Passwort eintragen; beim selbst gehosteten Server gehört der Port in die URL (meist 8443). Monitor64 liest nur. Das Zertifikat ist meist selbst signiert – den Fingerabdruck beim Test bestätigen.",
       "fp_secret": "Geheimnis (Token bzw. Passwort) für das neue Zertifikat – das gespeicherte geht nur an das bisherige",
       "fp_apply": "Übernehmen und testen"
     },
@@ -7054,7 +7072,8 @@
       "agent_current": "Der Agent ist schon aktuell (Version {version}).",
       "backup_max_age_h": "Höchstalter der Backups: 1 bis 8760 Stunden (nur Proxmox Backup Server).",
       "site": "Site ungültig (Buchstaben, Ziffern, - und _; nur beim Zugang UniFi).",
-      "address_secret": "Neue Adresse: Die Zugänge {list} würden ihr gespeichertes Geheimnis an die neue Adresse senden (ihr Ziel ist nicht über Fingerabdruck bzw. Hostschlüssel gebunden). Beim Speichern werden diese Geheimnisse entfernt – danach am Zugang neu eingeben."
+      "address_secret": "Neue Adresse: Die Zugänge {list} würden ihr gespeichertes Geheimnis an die neue Adresse senden (ihr Ziel ist nicht über Fingerabdruck bzw. Hostschlüssel gebunden). Beim Speichern werden diese Geheimnisse entfernt – danach am Zugang neu eingeben.",
+      "accept_mode": "Ungültige Angabe für „Zustand in Ordnung“ (change, always oder leer)."
     },
     "quote": "„{t}“",
     "err_session": "Sitzung abgelaufen oder keine Berechtigung – bitte die Seite neu laden und neu anmelden.",
@@ -7278,7 +7297,10 @@
       "too_large": "Ausgabe zu groß ({a} Bytes, höchstens {b})",
       "unknown_error": "unbekannter Fehler",
       "unreadable": "Ausgabe nicht lesbar",
-      "upgrade_locked": "Updates über die Paketverwaltung sind auf diesem System gesperrt (z. B. UGOS – Aktualisierung nur per Firmware)"
+      "upgrade_locked": "Updates über die Paketverwaltung sind auf diesem System gesperrt (z. B. UGOS – Aktualisierung nur per Firmware)",
+      "reboot_cbs": "Windows-Komponenten (CBS)",
+      "reboot_rename": "{a} Datei(en) werden beim Neustart ersetzt, z. B. {b}",
+      "reboot_pfro_old": "ausstehende Dateiaktionen (PendingFileRenameOperations; ab Agent 0.1.10 zählen nur noch Ersetzungen)"
     },
     "snmp": {
       "assembling": "Zusammenbau",
@@ -7856,7 +7878,7 @@
       "uf_locked": "zu viele abgelehnte Anmeldungen – die Konsole sperrt vorübergehend",
       "uf_login_pause": "nächster Versuch in {n} Min. (Zugang ändern, um sofort neu zu testen)",
       "uf_hint_site": "die Site „{s}“ gibt es nicht bzw. der Zugang darf sie nicht sehen",
-      "uf_hint_key": "API-Schlüssel prüfen: er muss in UniFi Network unter „Integrations“ dieser Konsole angelegt sein (Schlüssel aus dem Site Manager gelten lokal nicht); beim selbst gehosteten Network Server Benutzer und Passwort verwenden",
+      "uf_hint_key": "API-Schlüssel prüfen: er muss lokal auf dieser Konsole angelegt sein – in den UniFi-OS-Einstellungen unter Control Plane → Integrations (UNAS, neuere Konsolen) bzw. in UniFi Network unter „Integrations“; Schlüssel aus dem Site Manager gelten lokal nicht. Beim selbst gehosteten Network Server Benutzer und Passwort verwenden",
       "uf_hint_login": "Benutzer und Passwort prüfen; es muss ein lokaler Admin ohne Zwei-Faktor-Anmeldung sein",
       "uf_hint_perm": "dem Zugang fehlt das Recht – die Rolle „View Only“ für Network reicht",
       "uf_hint_no_os": "unter dieser Adresse antwortet kein UniFi OS – API-Schlüssel gibt es nur dort; beim selbst gehosteten Network Server Benutzer und Passwort verwenden (Port meist 8443)",
@@ -7901,7 +7923,17 @@
       "ha_state": "HA: {v}",
       "mc_no_containers": "mailcow meldet keine Container – erreicht mailcow seine Docker-API (dockerapi-mailcow)?",
       "mc_no_vmail": "mailcow meldet keinen Mail-Speicher",
-      "fb_no_soap_body": "Antwort ohne SOAP-Body"
+      "fb_no_soap_body": "Antwort ohne SOAP-Body",
+      "ud_slot": "Schacht {n}",
+      "ud_cache_slot": "Cache-Schacht {n}",
+      "ud_no_pool": "keinem Pool zugeordnet",
+      "ud_spare": "Hot-Spare",
+      "ud_risk": "Risiko: {v}",
+      "ud_protection": "Redundanz {cur} statt {exp}",
+      "ud_rebuild": "Wiederherstellung {v} %",
+      "ud_scrub_running": "Prüfung läuft",
+      "ud_cpu_temp": "CPU-Temperatur",
+      "ud_summary": "UniFi Drive: {p} Pool(s), {n} Platte(n)"
     },
     "smart": {
       "title": "SMART-Werte: {n}",

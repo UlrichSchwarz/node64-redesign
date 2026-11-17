@@ -799,6 +799,28 @@ Jede Phase endet mit Tests und einem Commit; Server-Änderungen nur nach Freigab
   (`Header.Flow`, `internal/tunnel/datagram.go`), Pakete als QUIC-Datagramme (RFC 9221). Der Server schickt zuerst
   über den Stream und schaltet um, sobald die Node per Datagramm antwortet; alte Nodes, TCP-Ausweichweg, Weg über
   den Nachbarn und zu große Pakete bleiben beim Stream. Zähler `cdn64_edge_quic_datagrams_total`.
+  **Zu große Pakete (2026-11-16, PROXY64 1.56.7 + cdn64-edge 0.22.3):** Nach der MTU-Erkennung schickten Browser
+  Pakete bis 1452 Byte, ins Datagramm passen je nach Tunnel-MTU nur etwa 1236–1408 Byte; rund 30 % gingen über den
+  Stream, kamen umsortiert an, der Upload über HTTP/3 brach bis auf ~2 Mbit/s ein (Speedtest; Labor
+  `TestQUICDownloadMeasure`, `NODE64_DLTEST=1`). Jetzt nach dem Handshake: zu groß und über 1280 Byte = verwerfen
+  (`tunnel.DropTooLarge`, wie eine kleinere MTU; Zähler `cdn64_edge_quic_datagrams_dropped_total`). Labor 30 ms ohne
+  Verlust: Upload ~3 → 470 Mbit/s, Download 140 → 420 Mbit/s. Bleibt: der Tunnel (quic-go Cubic, eine Verbindung) ist
+  verlustempfindlich – 0,5 % Verlust ≈ 10 Mbit/s je Tunnel-Verbindung (TCP wie HTTP/3); mehrere Sessions helfen bei TCP.
+  **Frühe Antwort (2026-11-16, PROXY64 1.56.7 + cdn64-edge 0.22.4):** Der eigentliche Speedtest-Einbruch (OpenSpeedTest
+  hinter nginx, speed.lappen.ipv64.net): nginx antwortet auf den Upload-POST sofort mit 200, ReverseProxy schloss den
+  Body, Go beendete unter HTTP/2/3 den Stream des Besuchers (STOP_SENDING/RST_STREAM), HTTP/1.1 ab 256 KB
+  „Connection: close“ – der Browser hörte auf zu senden. Jetzt `edge.KeepUpload` in PROXY64 und im Modus-2/3-Weg der
+  Server: Transport schließt nur eine Hülle, danach Rest lesen und verwerfen (1 GiB/30 s, EnableFullDuplex für HTTP/1.1),
+  wie nginx. Tests `TestUploadAfterEarlyAnswer` (cdn64), `TestTerminate` (Fall /early).
+  **Firefox (cdn64-edge 0.22.5):** Firefox beendet den Upload, sobald die Antwort vollständig ist („ok“ mit
+  Content-Length 2), auch wenn der Server weiter liest (Playwright: 0,5 von 31,5 MB, Chromium 31,5). Deshalb hält
+  `edge.KeepUpload` eine frühe Antwort bis 64 KB zurück, bis der Upload gelesen ist, und schickt sie danach.
+  **UDP-Portmapper (cdn64-edge 0.22.6, Forum 5110):** Die weite Grenze (1024×) galt erst nach 2 s; bis dahin 10× –
+  der Anlauf eines Downloads (QUIC/TCP in WireGuard brauchen 25–50×) wurde verworfen, der Besucher schickte nichts
+  zurück, die weite Grenze kam nie (Labor `TestUDPPortmapMeasure`: 0 statt 290 Mbit/s; 250 ms bzw. 64× halfen nicht
+  zuverlässig). Jetzt gilt sie nach 3 Paketen des Besuchers seit der ersten Antwort. Datagramme statt Stream für
+  den UDP-Portmapper geprüft und verworfen: ohne Verlust schafft der Stream 240–290 Mbit/s, mit Verlust bremst die
+  Staukontrolle beide Wege gleich, WireGuard-Pakete (~1450 Byte) passen nicht in ein Datagramm.
 - **TCP-/UDP-Streams (Portmapper Modus 1/2):** gebaut 2026-10-21 (PROXY64 1.24.0, cdn64-edge 0.15.0), siehe 8.3.
 - **Fremde Domains:** bewusst später.
 - **Modus 3 und Missbrauch:** offene Weiterleitung ins Internet ist anfällig (Angriffe über unsere IPs); SSRF-Schutz,
