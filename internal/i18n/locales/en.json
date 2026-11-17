@@ -66,6 +66,7 @@
     }
   },
   "nav": {
+    "ops64": "OPS64",
     "ipam64": "IPAM64",
     "group_overview": "Overview",
     "group_modules": "Modules",
@@ -1934,6 +1935,7 @@
     "origin": "From where",
     "load_more": "Load older",
     "area": {
+      "ops64": "OPS64",
       "ipam64": "IPAM64",
       "all": "All",
       "login": "Sign-in",
@@ -1949,6 +1951,10 @@
       "mcp": "AI (MCP)"
     },
     "actions": {
+      "ops64_source_new": "OPS64: host reported for the first time",
+      "ops64_source_delete": "OPS64: host removed",
+      "ops64_job_save": "OPS64: task settings saved",
+      "ops64_notify": "OPS64: notifications set",
       "ipam64_import": "IPAM64: CSV imported",
       "ipam64_ignore": "IPAM64: device ignored",
       "ipam64_notify": "IPAM64: notifications set",
@@ -3198,6 +3204,7 @@
       }
     },
     "subject": {
+      "ops64": "🗓️ OPS64: {name}",
       "ipam64": "🔎 IPAM64: {name}",
       "monitor_better": "🟡 {name}: {summary} better, but not OK yet",
       "monitor_problem": "{icon} {name}: {summary}",
@@ -3273,6 +3280,11 @@
       "summary_item": "• {name}: {message}"
     },
     "text": {
+      "ops64_fail": "{job} on {host} failed. {detail}",
+      "ops64_overdue": "{job} on {host} was due at {time} and did not run.",
+      "ops64_long": "{job} on {host} has been running for {duration}; usual is {expected}.",
+      "ops64_overlap": "Planned at the same time ({time}): {jobs}.",
+      "ops64_stale": "{host} stopped reporting (last {since}).",
       "ipam64_conflict_dup": "Duplicate address {ip}: two devices answer ({macs}).",
       "ipam64_conflict_mac": "Foreign device on the fixed address {ip} ({macs}).",
       "ipam64_conflict_lease": "The DHCP server assigned the fixed address {ip} ({macs}).",
@@ -5395,6 +5407,11 @@
     }
   },
   "modinfo": {
+    "ops64": {
+      "desc": "Shows backups, cron jobs and timers of all hosts in one schedule, detects concurrent tasks and reports failures, overdue jobs and unusually long runs.",
+      "h1": "Schedule by day, week and month",
+      "h2": "Read-only – changes nothing on the hosts"
+    },
     "ipam64": {
       "desc": "Plans prefixes and fixed addresses for IPv4 and IPv6 and shows what is really in use on your network – merged from DHCP, local DNS, Monitor64, PROXY64 and the neighbour table.",
       "h1": "Prefix tree, address grid and free addresses",
@@ -5623,6 +5640,209 @@
       "left_local": "Sonar64: left locally, but ipv64.net was not reachable ({error}). ipv64.net signs off the node after 30 days without reports.",
       "rejoined": "Sonar64: registered again – the node signs up at ipv64 with a new node.",
       "saved": "Sonar64: saved."
+    }
+  },
+  "ops64": {
+    "title": "OPS64",
+    "intro": "Operations & maintenance: backups, cron jobs and timers of all hosts in one place – with schedule, overlaps and alerts.",
+    "week": "Week {n}",
+    "extra": "unscheduled",
+    "extra_short": "unscheduled",
+    "unclear": "duration unclear",
+    "since": "since {time}",
+    "long": "unusually long",
+    "overlap": "Concurrent",
+    "overlap_at": "Concurrent {time}",
+    "now": "Now",
+    "month_tasks": "{n} tasks",
+    "month_fail": "{n} failed",
+    "month_overdue": "{n} overdue",
+    "month_running": "{n} running",
+    "dow": {
+      "0": "Sun",
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat"
+    },
+    "month": {
+      "1": "January",
+      "2": "February",
+      "3": "March",
+      "4": "April",
+      "5": "May",
+      "6": "June",
+      "7": "July",
+      "8": "August",
+      "9": "September",
+      "10": "October",
+      "11": "November",
+      "12": "December"
+    },
+    "kpi": {
+      "today": "Planned today",
+      "today_sub": "{n} of them done",
+      "running": "Running",
+      "failed": "Failed",
+      "failed_sub": "in 7 days",
+      "overdue": "Overdue",
+      "overlaps": "Overlaps",
+      "overlaps_sub": "today {time}",
+      "overlaps_none": "none today"
+    },
+    "plan": {
+      "title": "Schedule",
+      "nav": "Period",
+      "prev": "Back",
+      "next": "Forward",
+      "today": "Today",
+      "view": "View",
+      "window": "Time window",
+      "count": "{n} of {total} tasks",
+      "day_axis": "Day {day} (time of day)",
+      "empty": "Nothing in the schedule for this period and filter.",
+      "frequent": "Runs frequently and is therefore not shown as single entries:"
+    },
+    "view": {
+      "day": "Day",
+      "week": "Week",
+      "month": "Month"
+    },
+    "win": {
+      "night": "Night and morning",
+      "full": "Whole day"
+    },
+    "filter": {
+      "all_hosts": "All hosts",
+      "all_kinds": "All types",
+      "all_status": "All",
+      "apply": "Filter"
+    },
+    "col": {
+      "host": "Host",
+      "kind": "Type",
+      "status": "Status",
+      "task": "Task",
+      "target": "Target",
+      "schedule": "Schedule",
+      "command": "Command",
+      "last": "Last run",
+      "duration": "Duration",
+      "next": "Next run",
+      "state": "State"
+    },
+    "kind": {
+      "backup": "Backup",
+      "cron": "Cron job",
+      "timer": "Timer"
+    },
+    "status": {
+      "planned": "Planned",
+      "running": "Running",
+      "ok": "Successful",
+      "fail": "Failed",
+      "overdue": "Overdue",
+      "unknown": "No feedback",
+      "off": "Disabled",
+      "hidden": "Hidden",
+      "none": "No run yet"
+    },
+    "sched": {
+      "daily": "daily {time}",
+      "monthly": "monthly on day {day} at {time}",
+      "hourly": "hourly (minute {min})",
+      "minutes": "every {n} minutes",
+      "never": "no fixed time",
+      "bad": "schedule not understood",
+      "frequent": "runs frequently"
+    },
+    "sel": {
+      "title": "Selected",
+      "close": "Clear selection",
+      "system": "system task",
+      "next": "Next run",
+      "expected": "Expected duration",
+      "from_set": "set by hand",
+      "from_runs": "from the last runs",
+      "from_source": "reported by the host",
+      "range": "Last runs: {range}",
+      "varies": "The duration varies a lot. The schedule uses the longest of the last runs.",
+      "overlap": "Runs at the same time as: {jobs}.",
+      "no_history": "The host reports no runs for this task (e.g. cron job). So there is neither \"successful\" nor \"overdue\" here.",
+      "expected_set": "Expected duration (minutes)",
+      "expected_auto": "automatic",
+      "visible": "In the schedule",
+      "visible_auto": "Default",
+      "visible_show": "show",
+      "visible_hide": "hide",
+      "history": "History",
+      "no_runs": "No run reported yet.",
+      "hint": "Click a task or a day field to see details and history here."
+    },
+    "areas": {
+      "title": "Monitored areas",
+      "backups": "Backups",
+      "tasks": "Cron jobs & timers",
+      "sys_show": "Show {n} hidden tasks",
+      "sys_hide": "Hide hidden tasks",
+      "empty": "Nothing reported here yet.",
+      "hint": "OPS64 only reads: it starts, stops and locks nothing on the hosts. System tasks (e.g. clean-up timers) are hidden by default."
+    },
+    "alerts": {
+      "title": "Alerts",
+      "channels": "Channels under Notifications",
+      "empty": "No alerts.",
+      "notify": "Notify on:"
+    },
+    "alert": {
+      "fail": "Failure",
+      "overdue": "Overdue",
+      "long": "Long run",
+      "overlap": "Overlap",
+      "stale": "Host silent"
+    },
+    "sources": {
+      "title": "Hosts",
+      "jobs": "Tasks",
+      "updated": "Last report",
+      "stale": "not reporting",
+      "collector": "collector {name}",
+      "delete_confirm": "Remove host {name} with all its tasks and runs?",
+      "empty": "No host reports tasks yet.",
+      "hint": "A host appears with its first report. If it does not report for 30 minutes, it is flagged here; after one hour an alert follows."
+    },
+    "guide": {
+      "button": "Add host",
+      "title": "Add a host",
+      "intro": "A small script (Python 3, no extra packages) runs on every host via cron and reports backup jobs, cron jobs and timers with their runs to this node.",
+      "step_key": "Create an API key and set it as KEY on the host (KEY=node64_…):",
+      "step_key_link": "API",
+      "step_load": "Download the script to the host (as root):",
+      "step_conf": "Enter the node address and the API key. The host name is used as name; set it with \"name = …\" if needed.",
+      "step_test": "Test:",
+      "test_dry": "shows what would be reported",
+      "test_send": "reports once",
+      "step_cron": "Report every 5 minutes:",
+      "reads": "It reads: backup jobs and backup runs of Proxmox VE (pvesh), jobs of Proxmox Backup Server (proxmox-backup-manager), systemd timers with their last run and all crontabs. Passwords and tokens in command lines are masked before sending.",
+      "readonly": "The script changes nothing on the host.",
+      "download": "Download collector (Linux, Proxmox)",
+      "api": "Other systems report via the API (PUT /api/ops64/sources/<name>)."
+    },
+    "card": {
+      "planned": "Planned (24 h)",
+      "failed": "Failed (24 h)",
+      "overdue": "Overdue"
+    },
+    "flash": {
+      "job_saved": "Task saved.",
+      "notify_saved": "Notifications saved.",
+      "source_deleted": "Host removed."
+    },
+    "err": {
+      "input": "Invalid input.",
+      "not_found": "Not found."
     }
   },
   "ipam64": {

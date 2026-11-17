@@ -66,6 +66,7 @@
     }
   },
   "nav": {
+    "ops64": "OPS64",
     "ipam64": "IPAM64",
     "group_overview": "Übersicht",
     "group_modules": "Module",
@@ -1934,6 +1935,7 @@
     "origin": "Von wo",
     "load_more": "Ältere laden",
     "area": {
+      "ops64": "OPS64",
       "ipam64": "IPAM64",
       "all": "Alle",
       "login": "Anmeldung",
@@ -1949,6 +1951,10 @@
       "mcp": "KI (MCP)"
     },
     "actions": {
+      "ops64_source_new": "OPS64: Host meldet zum ersten Mal",
+      "ops64_source_delete": "OPS64: Host entfernt",
+      "ops64_job_save": "OPS64: Aufgabe eingestellt",
+      "ops64_notify": "OPS64: Benachrichtigungen eingestellt",
       "ipam64_import": "IPAM64: CSV importiert",
       "ipam64_ignore": "IPAM64: Gerät ignoriert",
       "ipam64_notify": "IPAM64: Benachrichtigungen eingestellt",
@@ -3198,6 +3204,7 @@
       }
     },
     "subject": {
+      "ops64": "🗓️ OPS64: {name}",
       "ipam64": "🔎 IPAM64: {name}",
       "monitor_better": "🟡 {name}: {summary} besser, aber noch nicht OK",
       "monitor_problem": "{icon} {name}: {summary}",
@@ -3273,6 +3280,11 @@
       "summary_item": "• {name}: {message}"
     },
     "text": {
+      "ops64_fail": "{job} auf {host} ist fehlgeschlagen. {detail}",
+      "ops64_overdue": "{job} auf {host} sollte am {time} starten und ist nicht gelaufen.",
+      "ops64_long": "{job} auf {host} läuft seit {duration}; üblich sind {expected}.",
+      "ops64_overlap": "Gleichzeitig geplant ({time}): {jobs}.",
+      "ops64_stale": "{host} meldet sich nicht mehr (zuletzt {since}).",
       "ipam64_conflict_dup": "Doppelte Adresse {ip}: zwei Geräte antworten ({macs}).",
       "ipam64_conflict_mac": "Fremdes Gerät an der festen Adresse {ip} ({macs}).",
       "ipam64_conflict_lease": "Der DHCP-Server hat die feste Adresse {ip} vergeben ({macs}).",
@@ -5395,6 +5407,11 @@
     }
   },
   "modinfo": {
+    "ops64": {
+      "desc": "Zeigt Backups, Cronjobs und Timer aller Hosts in einem Zeitplan, erkennt gleichzeitige Aufgaben und meldet Fehler, überfällige Jobs und ungewöhnlich lange Läufe.",
+      "h1": "Zeitplan für Tag, Woche und Monat",
+      "h2": "Liest nur mit – ändert nichts an den Hosts"
+    },
     "ipam64": {
       "desc": "Plant Präfixe und feste Adressen für IPv4 und IPv6 und zeigt, was im Netz wirklich belegt ist – zusammengeführt aus DHCP, lokalem DNS, Monitor64, PROXY64 und der Nachbartabelle.",
       "h1": "Präfix-Baum, Adressraster und freie Adressen",
@@ -5623,6 +5640,209 @@
       "left_local": "Sonar64: lokal ausgetreten, aber ipv64.net war nicht erreichbar ({error}). ipv64.net meldet den Knoten nach 30 Tagen ohne Meldung selbst ab.",
       "rejoined": "Sonar64: neu angemeldet – die Node meldet sich mit einem neuen Knoten bei ipv64 an.",
       "saved": "Sonar64: gespeichert."
+    }
+  },
+  "ops64": {
+    "title": "OPS64",
+    "intro": "Betrieb & Wartung: Backups, Cronjobs und Timer aller Hosts an einer Stelle – mit Zeitplan, Überschneidungen und Meldungen.",
+    "week": "KW {n}",
+    "extra": "außer der Reihe",
+    "extra_short": "außer der Reihe",
+    "unclear": "Laufzeit unklar",
+    "since": "seit {time}",
+    "long": "ungewöhnlich lang",
+    "overlap": "Gleichzeitig",
+    "overlap_at": "Gleichzeitig {time}",
+    "now": "Jetzt",
+    "month_tasks": "{n} Aufgaben",
+    "month_fail": "{n} Fehler",
+    "month_overdue": "{n} überfällig",
+    "month_running": "{n} laufend",
+    "dow": {
+      "0": "So",
+      "1": "Mo",
+      "2": "Di",
+      "3": "Mi",
+      "4": "Do",
+      "5": "Fr",
+      "6": "Sa"
+    },
+    "month": {
+      "1": "Januar",
+      "2": "Februar",
+      "3": "März",
+      "4": "April",
+      "5": "Mai",
+      "6": "Juni",
+      "7": "Juli",
+      "8": "August",
+      "9": "September",
+      "10": "Oktober",
+      "11": "November",
+      "12": "Dezember"
+    },
+    "kpi": {
+      "today": "Heute geplant",
+      "today_sub": "davon {n} erledigt",
+      "running": "Laufend",
+      "failed": "Fehlgeschlagen",
+      "failed_sub": "in 7 Tagen",
+      "overdue": "Überfällig",
+      "overlaps": "Überschneidungen",
+      "overlaps_sub": "heute {time}",
+      "overlaps_none": "heute keine"
+    },
+    "plan": {
+      "title": "Zeitplan",
+      "nav": "Zeitraum",
+      "prev": "Zurück",
+      "next": "Weiter",
+      "today": "Heute",
+      "view": "Ansicht",
+      "window": "Zeitfenster",
+      "count": "{n} von {total} Aufgaben",
+      "day_axis": "Tagesablauf {day} (Uhrzeit)",
+      "empty": "Für diesen Zeitraum und Filter steht nichts im Zeitplan.",
+      "frequent": "Läuft häufig und steht deshalb nicht einzeln im Zeitplan:"
+    },
+    "view": {
+      "day": "Tag",
+      "week": "Woche",
+      "month": "Monat"
+    },
+    "win": {
+      "night": "Nacht und Vormittag",
+      "full": "Ganzer Tag"
+    },
+    "filter": {
+      "all_hosts": "Alle Hosts",
+      "all_kinds": "Alle Typen",
+      "all_status": "Alle",
+      "apply": "Filtern"
+    },
+    "col": {
+      "host": "Host",
+      "kind": "Typ",
+      "status": "Status",
+      "task": "Aufgabe",
+      "target": "Ziel",
+      "schedule": "Zeitplan",
+      "command": "Befehl",
+      "last": "Letzter Lauf",
+      "duration": "Laufzeit",
+      "next": "Nächster Lauf",
+      "state": "Zustand"
+    },
+    "kind": {
+      "backup": "Backup",
+      "cron": "Cronjob",
+      "timer": "Timer"
+    },
+    "status": {
+      "planned": "Geplant",
+      "running": "Laufend",
+      "ok": "Erfolgreich",
+      "fail": "Fehlgeschlagen",
+      "overdue": "Überfällig",
+      "unknown": "Ohne Rückmeldung",
+      "off": "Abgeschaltet",
+      "hidden": "Ausgeblendet",
+      "none": "Noch kein Lauf"
+    },
+    "sched": {
+      "daily": "täglich {time}",
+      "monthly": "monatlich am {day}. um {time}",
+      "hourly": "stündlich (Minute {min})",
+      "minutes": "alle {n} Minuten",
+      "never": "kein fester Zeitpunkt",
+      "bad": "Zeitplan nicht lesbar",
+      "frequent": "läuft häufig"
+    },
+    "sel": {
+      "title": "Ausgewählt",
+      "close": "Auswahl aufheben",
+      "system": "Aufgabe des Systems",
+      "next": "Nächster Lauf",
+      "expected": "Erwartete Dauer",
+      "from_set": "von Hand",
+      "from_runs": "aus den letzten Läufen",
+      "from_source": "laut Host",
+      "range": "Letzte Läufe: {range}",
+      "varies": "Die Laufzeit schwankt stark. Für den Zeitplan zählt der längste der letzten Läufe.",
+      "overlap": "Läuft gleichzeitig mit: {jobs}.",
+      "no_history": "Der Host meldet für diese Aufgabe keine Läufe (z. B. Cronjob). Deshalb gibt es hier weder „erfolgreich“ noch „überfällig“.",
+      "expected_set": "Erwartete Dauer (Minuten)",
+      "expected_auto": "automatisch",
+      "visible": "Im Zeitplan",
+      "visible_auto": "Standard",
+      "visible_show": "anzeigen",
+      "visible_hide": "ausblenden",
+      "history": "Verlauf",
+      "no_runs": "Noch kein Lauf gemeldet.",
+      "hint": "Ein Klick auf eine Aufgabe oder ein Tagesfeld zeigt hier Einzelheiten und Verlauf."
+    },
+    "areas": {
+      "title": "Überwachte Bereiche",
+      "backups": "Backups",
+      "tasks": "Cronjobs & Timer",
+      "sys_show": "{n} ausgeblendete Aufgaben zeigen",
+      "sys_hide": "Ausgeblendete verbergen",
+      "empty": "Hier ist noch nichts gemeldet.",
+      "hint": "OPS64 liest nur mit: Es startet, stoppt und sperrt nichts auf den Hosts. Aufgaben des Systems (z. B. Aufräum-Timer) sind standardmäßig ausgeblendet."
+    },
+    "alerts": {
+      "title": "Meldungen",
+      "channels": "Kanäle unter Benachrichtigungen",
+      "empty": "Keine Meldungen.",
+      "notify": "Benachrichtigen bei:"
+    },
+    "alert": {
+      "fail": "Fehler",
+      "overdue": "Überfällig",
+      "long": "Lange Laufzeit",
+      "overlap": "Überschneidung",
+      "stale": "Host stumm"
+    },
+    "sources": {
+      "title": "Hosts",
+      "jobs": "Aufgaben",
+      "updated": "Letzte Meldung",
+      "stale": "meldet sich nicht",
+      "collector": "Sammler {name}",
+      "delete_confirm": "Host {name} mit allen Aufgaben und Läufen entfernen?",
+      "empty": "Noch kein Host meldet Aufgaben.",
+      "hint": "Ein Host erscheint mit seiner ersten Meldung. Meldet er sich 30 Minuten nicht, steht das hier; nach einer Stunde kommt eine Meldung."
+    },
+    "guide": {
+      "button": "Host einbinden",
+      "title": "Host einbinden",
+      "intro": "Auf jedem Host läuft ein kleines Skript (Python 3, ohne Zusatzpakete) per cron und meldet Backup-Jobs, Cronjobs und Timer samt Läufen an diese Node.",
+      "step_key": "API-Key anlegen und auf dem Host als KEY setzen (KEY=node64_…):",
+      "step_key_link": "API",
+      "step_load": "Skript auf den Host laden (als root):",
+      "step_conf": "Adresse der Node und API-Key eintragen. Als Name gilt der Hostname; mit „name = …“ lässt er sich festlegen.",
+      "step_test": "Testen:",
+      "test_dry": "zeigt, was gemeldet würde",
+      "test_send": "meldet einmal",
+      "step_cron": "Alle 5 Minuten melden:",
+      "reads": "Gelesen werden: Backup-Jobs und Backup-Läufe von Proxmox VE (pvesh), Jobs des Proxmox Backup Server (proxmox-backup-manager), systemd-Timer mit dem letzten Lauf und alle crontabs. Passwörter und Token in Befehlszeilen werden vor dem Senden unkenntlich gemacht.",
+      "readonly": "Das Skript ändert nichts am Host.",
+      "download": "Sammler herunterladen (Linux, Proxmox)",
+      "api": "Andere Systeme melden über die API (PUT /api/ops64/sources/<name>)."
+    },
+    "card": {
+      "planned": "Geplant (24 h)",
+      "failed": "Fehler (24 h)",
+      "overdue": "Überfällig"
+    },
+    "flash": {
+      "job_saved": "Aufgabe gespeichert.",
+      "notify_saved": "Benachrichtigungen gespeichert.",
+      "source_deleted": "Host entfernt."
+    },
+    "err": {
+      "input": "Ungültige Angabe.",
+      "not_found": "Nicht gefunden."
     }
   },
   "ipam64": {

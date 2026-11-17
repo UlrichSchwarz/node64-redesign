@@ -4,6 +4,8 @@ Short summary of what changes per version. Details per module are in the node un
 
 ## Unreleased
 
+- OPS64: new module for operations & maintenance (off by default) – backups, cron jobs and timers of all hosts in one schedule by day, week and month, with overlaps and alerts on failures, overdue tasks and unusually long runs. Hosts report through a small collector (Proxmox VE, Proxmox Backup Server, systemd timers, cron); OPS64 only reads.
+
 ## 1.7.8 – 2026-11-17
 
 - Monitor64: SNMP values (e.g. disks of a QNAP NAS) no longer jump to "Unknown" for a few minutes now and then when the device briefly returns an incomplete table – the last state applies for up to 10 minutes (#204).

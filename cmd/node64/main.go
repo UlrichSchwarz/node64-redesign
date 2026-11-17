@@ -60,6 +60,7 @@ import (
 	"github.com/ipv64net/node64/internal/nodecfg/nodecluster"
 	"github.com/ipv64net/node64/internal/notify"
 	"github.com/ipv64net/node64/internal/notify/nfcluster"
+	"github.com/ipv64net/node64/internal/ops64"
 	"github.com/ipv64net/node64/internal/peer"
 	"github.com/ipv64net/node64/internal/ports"
 	"github.com/ipv64net/node64/internal/privdrop"
@@ -343,6 +344,10 @@ func run() error {
 	ipamModule.SetNotifier(dispatcher.Dispatch) // neue Konflikte, neue Geraete
 	modules.Register(ipamModule)
 	dnsModule.SetIPAM(func() bool { return modules.IsRunning(ipam64.Name) }) // Eintraege aus IPAM64 nur dort aendern
+	// OPS64 (standardmaessig aus): Zeitplan der Backups, Cronjobs und Timer, die die Hosts ueber die API melden
+	opsModule := ops64.New(st, logger.Slog())
+	opsModule.SetNotifier(dispatcher.Dispatch) // Fehler, ueberfaellige Aufgaben, lange Laeufe, gleichzeitige Aufgaben
+	modules.Register(opsModule)
 	// Verknuepfung mit ipv64.net (Sync-Client); standalone bleibt alles wie gehabt
 	syncClient := nodesync.New(nodesync.Deps{Core: st, HC: hcModule, NF: nfStore, Box: box, Version: Version, Log: logger.Slog(), Senders: notify.Senders(Version), Modules: modules,
 		UnlinkAPI: func(ctx context.Context, nodeID string, keep bool) error { // hubs nicht erreichbar: ueber die API v2 trennen

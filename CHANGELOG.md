@@ -4,6 +4,8 @@ Kurz, was sich je Version ändert. Einzelheiten je Modul stehen in der Node unte
 
 ## Unveröffentlicht
 
+- OPS64: Neues Modul für Betrieb & Wartung (Standard aus) – Backups, Cronjobs und Timer aller Hosts in einem Zeitplan für Tag, Woche und Monat, mit Überschneidungen und Meldungen bei Fehlern, überfälligen Aufgaben und ungewöhnlich langen Läufen. Die Hosts melden über einen kleinen Sammler (Proxmox VE, Proxmox Backup Server, systemd-Timer, cron); OPS64 liest nur mit.
+
 ## 1.7.8 – 2026-11-17
 
 - Monitor64: SNMP-Werte (z. B. Platten eines QNAP-NAS) springen nicht mehr sporadisch für einige Minuten auf „Unbekannt“, wenn das Gerät eine Tabelle kurz unvollständig liefert – der letzte Stand gilt bis zu 10 Minuten (#204).

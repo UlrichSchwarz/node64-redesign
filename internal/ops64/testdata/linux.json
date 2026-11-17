@@ -1,0 +1,176 @@
+{
+  "collector": "linux 1",
+  "jobs": [
+    {
+      "command": "vzdump --all --storage pbs-standort-b --mode snapshot",
+      "enabled": true,
+      "history": true,
+      "id": "vzdump-backup-1a2b3c4d-0001",
+      "kind": "backup",
+      "name": "Backup VMs",
+      "schedule": "01:00",
+      "syntax": "calendar",
+      "target": "pbs-standort-b"
+    },
+    {
+      "command": "vzdump 101,102 --storage local --mode stop",
+      "enabled": false,
+      "history": true,
+      "id": "vzdump-backup-1a2b3c4d-0002",
+      "kind": "backup",
+      "name": "vzdump 101,102",
+      "schedule": "sat 03:30",
+      "syntax": "calendar",
+      "target": "local"
+    },
+    {
+      "command": "/usr/lib/apt/apt.systemd.daily update",
+      "enabled": true,
+      "history": true,
+      "id": "timer-apt-daily.timer",
+      "kind": "timer",
+      "name": "apt-daily",
+      "runs": [
+        {
+          "end": 1794978060,
+          "start": 1794978000,
+          "status": "ok"
+        }
+      ],
+      "schedule": "*-*-* 06,18:00:00",
+      "syntax": "calendar",
+      "system": true,
+      "target": "Daily apt download activities"
+    },
+    {
+      "command": "/usr/local/bin/prune --token *** --keep 7",
+      "enabled": true,
+      "history": true,
+      "id": "timer-snapshot-prune.timer",
+      "kind": "timer",
+      "name": "snapshot-prune",
+      "runs": [
+        {
+          "detail": "Result=exit-code, exit 1",
+          "end": 1794977100,
+          "start": 1794976200,
+          "status": "fail"
+        }
+      ],
+      "schedule": "*-*-* 05:30:00",
+      "syntax": "calendar",
+      "system": false,
+      "target": "Snapshot prune"
+    },
+    {
+      "enabled": false,
+      "history": true,
+      "id": "timer-old.timer",
+      "kind": "timer",
+      "name": "old",
+      "schedule": "",
+      "syntax": "calendar",
+      "system": false,
+      "target": "Old"
+    },
+    {
+      "command": "cd / && run-parts --report /etc/cron.hourly",
+      "history": false,
+      "id": "cron-76b3b47f6d06",
+      "kind": "cron",
+      "name": "run-parts cron.hourly",
+      "schedule": "17 * * * *",
+      "syntax": "cron",
+      "system": true
+    },
+    {
+      "command": "test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.daily; }",
+      "history": false,
+      "id": "cron-a7a17253ed43",
+      "kind": "cron",
+      "name": "run-parts cron.daily",
+      "schedule": "25 6 * * *",
+      "syntax": "cron",
+      "system": true
+    },
+    {
+      "command": "test -e /run/systemd/system || /sbin/e2scrub_all -A -r",
+      "history": false,
+      "id": "cron-23bc6a2240c7",
+      "kind": "cron",
+      "name": "e2scrub_all",
+      "schedule": "30 3 * * 0",
+      "syntax": "cron",
+      "system": false
+    },
+    {
+      "command": "if [ $(date +\\%w) -eq 0 ] && [ -x /usr/lib/zfs-linux/scrub ]; then /usr/lib/zfs-linux/scrub; fi",
+      "history": false,
+      "id": "cron-ae93b807bdc3",
+      "kind": "cron",
+      "name": "scrub",
+      "schedule": "24 0 8-14 * *",
+      "syntax": "cron",
+      "system": false
+    },
+    {
+      "command": "/usr/local/bin/rsync-medien.sh --password=*** >/dev/null 2>&1",
+      "history": false,
+      "id": "cron-12cc4ed66874",
+      "kind": "cron",
+      "name": "rsync-medien.sh",
+      "schedule": "30 1 * * *",
+      "syntax": "cron",
+      "system": false
+    },
+    {
+      "command": "/usr/local/bin/mount-check",
+      "history": false,
+      "id": "cron-568859d8770c",
+      "kind": "cron",
+      "name": "mount-check",
+      "schedule": "@reboot",
+      "syntax": "cron",
+      "system": false
+    },
+    {
+      "command": "curl -fsS https://user:***@example.org/ping",
+      "history": false,
+      "id": "cron-1844b28e2314",
+      "kind": "cron",
+      "name": "curl",
+      "schedule": "*/5 * * * *",
+      "syntax": "cron",
+      "system": false
+    }
+  ],
+  "label": "pve-01",
+  "notes": [],
+  "runs": [
+    {
+      "end": 0,
+      "kind": "backup",
+      "name": "vzdump 104",
+      "ref": "UPID:pve-01:0003:vzdump:104:root@pam:",
+      "start": 1794993600
+    },
+    {
+      "end": 1794964320,
+      "kind": "backup",
+      "name": "vzdump",
+      "ref": "UPID:pve-01:0001:vzdump::root@pam:",
+      "start": 1794960002,
+      "status": "ok"
+    },
+    {
+      "detail": "job errors",
+      "end": 1794873840,
+      "kind": "backup",
+      "name": "vzdump",
+      "ref": "UPID:pve-01:0002:vzdump::root@pam:",
+      "start": 1794873603,
+      "status": "fail"
+    }
+  ],
+  "timezone": "Europe/Berlin"
+}

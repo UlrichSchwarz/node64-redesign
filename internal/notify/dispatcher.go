@@ -492,7 +492,7 @@ func (d *Dispatcher) targetsFor(ctx context.Context, a Alert) []*Channel {
 // isDownKind: Stoerungsmeldungen (Sammelmeldung der Entwarnungen zaehlt als Entwarnung).
 func isDownKind(k Kind) bool {
 	return k == KindDown || k == KindReminder || k == KindFlappingStart || k == KindSummary || k == KindDegraded || k == KindUnchecked || k == KindDynFail || k == KindDynLimit || k == KindQuota ||
-		k == KindDNS64Down || k == KindDNS64Lists || k == KindDNS64Cert || k == KindDNS64DHCP || k == KindIPAM || k == KindCertFail || k == KindCertExpiry || k == KindCDNOnlineDown ||
+		k == KindDNS64Down || k == KindDNS64Lists || k == KindDNS64Cert || k == KindDNS64DHCP || k == KindIPAM || k == KindOps || k == KindCertFail || k == KindCertExpiry || k == KindCDNOnlineDown ||
 		k == KindCDNOnlineBlocked || k == KindClusterDown || k == KindHoneypotWatch || k == KindHoneypotLogin || k == KindProxmoxDown || k == KindProxmoxThreshold ||
 		k == KindUpdateFailed || k == KindMonitorProblem || k == KindMonitorUnreachable || k == KindMonitorFlapping || k == KindMonitorReminder
 }
@@ -987,6 +987,9 @@ func (d *Dispatcher) composeDynDNS(lang string, a Alert, m Message) Message {
 	}
 	if IsIPAM(a.Kind) {
 		m.URL = d.baseURL(uid, "/ipam64/conflicts")
+	}
+	if IsOps(a.Kind) {
+		m.URL = d.baseURL(uid, "/ops64")
 	}
 	if IsCert(a.Kind) {
 		m.URL = d.baseURL(uid, "/certificates")

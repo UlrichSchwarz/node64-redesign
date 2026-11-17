@@ -314,6 +314,10 @@ func (r *recBackend) Get(ctx context.Context, id Identity, path string, q url.Va
 
 // notCovered: GET-Routen der API, die MCP bewusst nicht liest (mit Grund).
 var notCovered = map[string]string{
+	"/api/ops64/sources":             "OPS64 – noch kein MCP-Werkzeug (Modul 0.1.0)",
+	"/api/ops64/jobs":                "OPS64 – noch kein MCP-Werkzeug (Modul 0.1.0)",
+	"/api/ops64/plan":                "OPS64 – noch kein MCP-Werkzeug (Modul 0.1.0)",
+	"/api/ops64/collector/linux.py":  "OPS64 – Sammler-Skript, keine Daten",
 	"/api/backup":                    "Backup – nie ueber MCP",
 	"/api/keys":                      "API-Keys – nie ueber MCP",
 	"/api/users":                     "Benutzer – nie ueber MCP",

@@ -63,6 +63,10 @@
     {
       "name": "IPAM64",
       "description": "IP-Adressverwaltung für IPv4 und IPv6 (Modul IPAM64): Präfixe mit Hierarchie, Adressbereiche und feste Adressen, zusammengeführt mit DHCP und lokalem DNS von DNS64, Monitor64, Healthchecks, PROXY64 und der Nachbartabelle. Ist das Modul aus: 404. Rolle „Nur lesen“: Änderungen 403. Körper werden streng gelesen (unbekanntes Feld: 400). Fehler als `{\"error\": \"<Text>\"}`. Jede Änderung steht im Audit-Log (Bereich IPAM64) und wird im Cluster abgeglichen."
+    },
+    {
+      "name": "OPS64",
+      "description": "Betrieb und Wartung (Modul OPS64): Hosts melden Backup-Jobs, Cronjobs und Timer samt Läufen; die Node rechnet daraus Zeitplan, Überschneidungen und Meldungen. OPS64 liest nur und steuert nichts auf den Hosts. Ist das Modul aus: 404. Rolle „Nur lesen“: Änderungen 403. Körper werden streng gelesen (unbekanntes Feld: 400). Fehler als `{\"error\": \"<Text>\"}`."
     }
   ],
   "security": [
@@ -10655,6 +10659,396 @@
             "type": "array",
             "items": {
               "type": "string"
+            }
+          }
+        }
+      },
+      "OPS64Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "OPS64Source": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "collector": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "first": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "jobs": {
+            "type": "integer"
+          }
+        }
+      },
+      "OPS64RunInput": {
+        "type": "object",
+        "required": [
+          "start"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "backup",
+              "cron",
+              "timer"
+            ],
+            "description": "Nur bei Läufen ohne Aufgabe (oberste Ebene)."
+          },
+          "name": {
+            "type": "string"
+          },
+          "start": {
+            "type": "integer",
+            "description": "Unix-Sekunden."
+          },
+          "end": {
+            "type": "integer",
+            "description": "Unix-Sekunden, 0 bzw. fehlt = läuft noch."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "fail",
+              "unknown"
+            ],
+            "description": "Pflicht, sobald der Lauf beendet ist."
+          },
+          "detail": {
+            "type": "string"
+          },
+          "ref": {
+            "type": "string",
+            "description": "Kennung des Laufs in der Quelle (z. B. UPID)."
+          }
+        }
+      },
+      "OPS64JobInput": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "backup",
+              "cron",
+              "timer"
+            ]
+          },
+          "target": {
+            "type": "string"
+          },
+          "schedule": {
+            "type": "string",
+            "description": "cron (fünf Felder, @daily …) oder Kalender-Angabe wie bei systemd und Proxmox (`mon..fri 02:00`, `*-*-01 04:00:00`, `daily`); mehrere mit `;`."
+          },
+          "syntax": {
+            "type": "string",
+            "enum": [
+              "",
+              "cron",
+              "calendar"
+            ],
+            "description": "Leer: wird erkannt."
+          },
+          "command": {
+            "type": "string",
+            "description": "Geheimnisse vor dem Senden unkenntlich machen."
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Fehlt = an."
+          },
+          "system": {
+            "type": "boolean",
+            "description": "Aufgabe des Systems: standardmäßig nicht im Zeitplan."
+          },
+          "history": {
+            "type": "boolean",
+            "description": "Der Host meldet Läufe dieser Aufgabe (nur dann gibt es „überfällig“)."
+          },
+          "expected": {
+            "type": "integer",
+            "description": "Erwartete Dauer in Sekunden (0 = unbekannt)."
+          },
+          "runs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OPS64RunInput"
+            }
+          }
+        }
+      },
+      "OPS64SourceUpdate": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "Anzeigename des Hosts."
+          },
+          "collector": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "IANA-Zeitzone des Hosts (Zeitpläne gelten dort); leer = die der Node."
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Hinweise des Sammlers, erscheinen beim Host."
+          },
+          "jobs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OPS64JobInput"
+            }
+          },
+          "runs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OPS64RunInput"
+            },
+            "description": "Läufe ohne Aufgabe (mit `kind`)."
+          }
+        }
+      },
+      "OPS64IngestResult": {
+        "type": "object",
+        "properties": {
+          "jobs": {
+            "type": "integer"
+          },
+          "runs": {
+            "type": "integer"
+          },
+          "skipped": {
+            "type": "integer"
+          }
+        }
+      },
+      "OPS64Run": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "fail",
+              "running",
+              "unknown"
+            ]
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      },
+      "OPS64Job": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "host": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          },
+          "schedule": {
+            "type": "string"
+          },
+          "syntax": {
+            "type": "string"
+          },
+          "command": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "system": {
+            "type": "boolean"
+          },
+          "history": {
+            "type": "boolean"
+          },
+          "shown": {
+            "type": "boolean",
+            "description": "Steht im Zeitplan."
+          },
+          "schedule_ok": {
+            "type": "boolean",
+            "description": "Zeitplan lesbar."
+          },
+          "frequent": {
+            "type": "boolean"
+          },
+          "expected_sec": {
+            "type": "integer"
+          },
+          "expected_from": {
+            "type": "string",
+            "enum": [
+              "",
+              "set",
+              "runs",
+              "source"
+            ]
+          },
+          "next": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last": {
+            "$ref": "#/components/schemas/OPS64Run"
+          },
+          "overdue": {
+            "type": "boolean"
+          }
+        }
+      },
+      "OPS64Item": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "host": {
+            "type": "string"
+          },
+          "job": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "planned": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "planned",
+              "running",
+              "ok",
+              "fail",
+              "overdue",
+              "unknown"
+            ]
+          },
+          "duration_unclear": {
+            "type": "boolean"
+          },
+          "long": {
+            "type": "boolean"
+          }
+        }
+      },
+      "OPS64Plan": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OPS64Item"
+            }
+          },
+          "overlaps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "end": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "jobs": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
             }
           }
         }
@@ -34816,6 +35210,218 @@
                       }
                     }
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ops64/sources": {
+      "get": {
+        "tags": [
+          "OPS64"
+        ],
+        "summary": "Hosts, die Aufgaben melden",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sources": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OPS64Source"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ops64/sources/{name}": {
+      "put": {
+        "tags": [
+          "OPS64"
+        ],
+        "summary": "Aufgaben und Läufe eines Hosts melden",
+        "description": "Für Sammler auf den Hosts (Skript unter OPS64 → Host einbinden). Jede Meldung enthält alle Aufgaben des Hosts: fehlende verschwinden, Läufe werden ergänzt (90 Tage Aufbewahrung). Läufe ohne Aufgabe (`runs` auf oberster Ebene, mit `kind`) ordnet die Node der Aufgabe derselben Art zu, deren Zeitpunkt höchstens 2 Minuten vor bzw. 15 Minuten nach dem Start liegt. Höchstens 500 Aufgaben und 5000 Läufe je Meldung, 2 MB, 64 Hosts. Ungültige Einträge werden übersprungen und gezählt.",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,62}$"
+            },
+            "description": "Kennung des Hosts (Kleinbuchstaben, Ziffern, Punkt, Strich, Unterstrich)."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OPS64SourceUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OPS64IngestResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Fehler",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OPS64Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "OPS64"
+        ],
+        "summary": "Host mit Aufgaben, Läufen und Meldungen entfernen",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,62}$"
+            },
+            "description": "Kennung des Hosts (Kleinbuchstaben, Ziffern, Punkt, Strich, Unterstrich)."
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Entfernt"
+          },
+          "404": {
+            "description": "Fehler",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OPS64Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ops64/jobs": {
+      "get": {
+        "tags": [
+          "OPS64"
+        ],
+        "summary": "Alle Aufgaben mit letztem und nächstem Lauf",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "jobs": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OPS64Job"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ops64/plan": {
+      "get": {
+        "tags": [
+          "OPS64"
+        ],
+        "summary": "Zeitplan eines Zeitraums",
+        "description": "Einträge (geplante Zeitpunkte mit bzw. ohne Lauf, Läufe außer der Reihe) und die Zeiträume, in denen mehrere Aufgaben gleichzeitig laufen. Standard: heute; höchstens 62 Tage.",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Beginn: RFC 3339 oder Datum JJJJ-MM-TT (Standard heute 0 Uhr)."
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Ende (ausschließlich): RFC 3339 oder Datum (Standard ein Tag nach from)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OPS64Plan"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Fehler",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OPS64Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ops64/collector/linux.py": {
+      "get": {
+        "tags": [
+          "OPS64"
+        ],
+        "summary": "Sammler-Skript für Linux-Hosts laden",
+        "description": "Python 3 ohne Zusatzpakete; meldet Backup-Jobs (Proxmox VE, Proxmox Backup Server), systemd-Timer und crontabs an `PUT /ops64/sources/{name}`. Einrichtung: OPS64 → Host einbinden.",
+        "responses": {
+          "200": {
+            "description": "Skript",
+            "content": {
+              "text/x-python": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }
