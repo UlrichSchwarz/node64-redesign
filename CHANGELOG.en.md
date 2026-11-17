@@ -5,6 +5,7 @@ Short summary of what changes per version. Details per module are in the node un
 ## Unreleased
 
 - IPAM64 0.7.0: external DHCP servers (router, firewall) can report their networks, fixed assignments and leases to IPAM64; ready-made script for pfSense with Kea to download (community proposal).
+- OPS64: new module for operations & maintenance (off by default) – backups, cron jobs and timers of all hosts in one schedule by day, week and month, with overlaps and alerts on failures, overdue tasks and unusually long runs. Hosts report through a small collector (Proxmox VE, Proxmox Backup Server, systemd timers, cron); OPS64 only reads.
 
 ## 1.7.8 – 2026-11-17
 

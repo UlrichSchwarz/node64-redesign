@@ -1,0 +1,20 @@
+Id=apt-daily.timer
+Unit=apt-daily.service
+Description=Daily apt download activities
+TimersCalendar={ OnCalendar=*-*-* 06,18:00:00 ; next_elapse=@1795000000 }
+ActiveState=active
+FragmentPath=/lib/systemd/system/apt-daily.timer
+
+Id=snapshot-prune.timer
+Unit=snapshot-prune.service
+Description=Snapshot prune
+TimersCalendar={ OnCalendar=*-*-* 05:30:00 ; next_elapse=@1795000000 }
+ActiveState=active
+FragmentPath=/etc/systemd/system/snapshot-prune.timer
+
+Id=old.timer
+Unit=old.service
+Description=Old
+TimersMonotonic={ OnUnitActiveUSec=1h ; next_elapse=0 }
+ActiveState=inactive
+FragmentPath=/etc/systemd/system/old.timer

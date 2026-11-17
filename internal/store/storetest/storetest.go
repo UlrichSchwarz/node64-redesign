@@ -20,6 +20,7 @@ import (
 	"github.com/ipv64net/node64/internal/honeypot"
 	"github.com/ipv64net/node64/internal/ipam64"
 	"github.com/ipv64net/node64/internal/notify"
+	"github.com/ipv64net/node64/internal/ops64"
 	"github.com/ipv64net/node64/internal/peer"
 	"github.com/ipv64net/node64/internal/store"
 )
@@ -42,6 +43,7 @@ func Scopes(t testing.TB) map[string][]store.Migration {
 	out[cdn64.Name] = (&cdn64.Module{}).Migrations()
 	out[honeypot.Name] = honeypot.Migrations()
 	out[ipam64.Name] = ipam64.Migrations()
+	out[ops64.Name] = ops64.Migrations()
 	return out
 }
 

@@ -1,0 +1,265 @@
+{{define "content"}}
+{{$d := .Data}}{{$q := $d.Q}}
+<div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+	<h1 class="h4 mb-0 me-auto"><i class="bi bi-calendar2-check text-primary"></i> {{.T "ops64.title"}}</h1>
+	<a class="btn btn-sm btn-outline-secondary" href="#ops-sources" id="ops-hosts-link"><i class="bi bi-hdd-rack"></i> {{.T "ops64.sources.title"}}</a>
+	<button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#ops-guide" aria-expanded="{{if $d.Empty}}true{{else}}false{{end}}" aria-controls="ops-guide" id="ops-guide-btn"><i class="bi bi-plus-lg"></i> {{.T "ops64.guide.button"}}</button>
+</div>
+<p class="text-body-secondary small">{{.T "ops64.intro"}}</p>
+
+<div class="collapse{{if $d.Empty}} show{{end}}" id="ops-guide">
+	<div class="card mb-3 border-primary">
+		<div class="card-header"><i class="bi bi-plug text-primary"></i> {{.T "ops64.guide.title"}}</div>
+		<div class="card-body small">
+			<p class="mb-2">{{.T "ops64.guide.intro"}}</p>
+			<ol class="mb-2 ops-guide">
+				<li>{{.T "ops64.guide.step_key"}} <a href="/api/docs">{{.T "ops64.guide.step_key_link"}}</a></li>
+				<li>{{.T "ops64.guide.step_load"}}
+					<pre class="ops-code mb-1"><code>curl -fsS -H "Authorization: Bearer $KEY" -o /usr/local/bin/node64-ops {{$d.BaseURL}}/api/ops64/collector/linux.py
+chmod 755 /usr/local/bin/node64-ops</code></pre></li>
+				<li>{{.T "ops64.guide.step_conf"}}
+					<pre class="ops-code mb-1"><code>cat &gt; /etc/node64-ops.conf &lt;&lt;EOF
+url = {{$d.BaseURL}}
+key = $KEY
+EOF
+chmod 600 /etc/node64-ops.conf</code></pre></li>
+				<li>{{.T "ops64.guide.step_test"}}
+					<pre class="ops-code mb-1"><code>node64-ops --dry-run   # {{.T "ops64.guide.test_dry"}}
+node64-ops             # {{.T "ops64.guide.test_send"}}</code></pre></li>
+				<li>{{.T "ops64.guide.step_cron"}}
+					<pre class="ops-code mb-1"><code>echo '*/5 * * * * root /usr/local/bin/node64-ops' &gt; /etc/cron.d/node64-ops</code></pre></li>
+			</ol>
+			<p class="mb-1 text-body-secondary">{{.T "ops64.guide.reads"}}</p>
+			<p class="mb-0 text-body-secondary">{{.T "ops64.guide.readonly"}}</p>
+		</div>
+		<div class="card-footer small"><a href="/ops64/collector/linux.py" id="ops-collector"><i class="bi bi-download"></i> {{.T "ops64.guide.download"}}</a> <span class="text-body-secondary">· {{.T "ops64.guide.api"}}</span></div>
+	</div>
+</div>
+
+{{if not $d.Empty}}
+<div class="row row-cols-2 row-cols-md-3 row-cols-xl-5 g-3 mb-3" id="ops-kpis">
+	<div class="col"><div class="card stat stat-primary h-100"><div class="card-body"><div class="stat-text"><div class="stat-label">{{.T "ops64.kpi.today"}}</div><div class="stat-value" id="ops-kpi-today">{{$d.KPI.Today}}</div><div class="stat-sub">{{.T "ops64.kpi.today_sub" "n" $d.KPI.Done}}</div></div><i class="bi bi-calendar2-day stat-icon"></i></div></div></div>
+	<div class="col"><div class="card stat stat-info h-100"><div class="card-body"><div class="stat-text"><div class="stat-label">{{.T "ops64.kpi.running"}}</div><div class="stat-value" id="ops-kpi-running">{{$d.KPI.Running}}</div><div class="stat-sub">{{if $d.KPI.RunningText}}{{$d.KPI.RunningText}}{{else}}–{{end}}</div></div><i class="bi bi-play-circle stat-icon"></i></div></div></div>
+	<div class="col"><div class="card stat {{if $d.KPI.Failed}}stat-down{{else}}stat-ok{{end}} h-100"><div class="card-body"><div class="stat-text"><div class="stat-label">{{.T "ops64.kpi.failed"}}</div><div class="stat-value{{if $d.KPI.Failed}} text-danger{{end}}" id="ops-kpi-failed">{{$d.KPI.Failed}}</div><div class="stat-sub">{{.T "ops64.kpi.failed_sub"}}</div></div><i class="bi bi-x-octagon stat-icon"></i></div></div></div>
+	<div class="col"><div class="card stat {{if $d.KPI.Overdue}}stat-down{{else}}stat-ok{{end}} h-100"><div class="card-body"><div class="stat-text"><div class="stat-label">{{.T "ops64.kpi.overdue"}}</div><div class="stat-value{{if $d.KPI.Overdue}} text-warning{{end}}" id="ops-kpi-overdue">{{$d.KPI.Overdue}}</div><div class="stat-sub">{{if $d.KPI.OverdueText}}{{$d.KPI.OverdueText}}{{else}}–{{end}}</div></div><i class="bi bi-hourglass-split stat-icon"></i></div></div></div>
+	<div class="col"><div class="card stat {{if $d.KPI.Overlaps}}stat-down{{else}}stat-ok{{end}} h-100"><div class="card-body"><div class="stat-text"><div class="stat-label">{{.T "ops64.kpi.overlaps"}}</div><div class="stat-value{{if $d.KPI.Overlaps}} text-danger{{end}}" id="ops-kpi-overlaps">{{$d.KPI.Overlaps}}</div><div class="stat-sub">{{if $d.KPI.OverlapText}}{{.T "ops64.kpi.overlaps_sub" "time" $d.KPI.OverlapText}}{{else}}{{.T "ops64.kpi.overlaps_none"}}{{end}}</div></div><i class="bi bi-intersect stat-icon"></i></div></div></div>
+</div>
+
+<div class="card mb-3" id="ops-plan">
+	<div class="card-header d-flex flex-wrap align-items-center gap-2">
+		<span class="fw-semibold">{{.T "ops64.plan.title"}}</span> <span class="text-body-secondary" id="ops-plan-range">{{$d.Title}}</span>
+		<div class="btn-group btn-group-sm" role="group" aria-label="{{.T "ops64.plan.nav"}}">
+			<a class="btn btn-outline-secondary" href="{{$d.PrevURL}}" title="{{.T "ops64.plan.prev"}}" aria-label="{{.T "ops64.plan.prev"}}"><i class="bi bi-chevron-left"></i></a>
+			<a class="btn btn-outline-secondary" href="{{$d.TodayURL}}">{{.T "ops64.plan.today"}}</a>
+			<a class="btn btn-outline-secondary" href="{{$d.NextURL}}" title="{{.T "ops64.plan.next"}}" aria-label="{{.T "ops64.plan.next"}}"><i class="bi bi-chevron-right"></i></a>
+		</div>
+		<div class="btn-group btn-group-sm ms-auto" role="group" aria-label="{{.T "ops64.plan.view"}}" id="ops-views">
+			<a class="btn {{if eq $q.View "day"}}btn-primary{{else}}btn-outline-secondary{{end}}" href="{{$q.URL "view" "day"}}">{{.T "ops64.view.day"}}</a>
+			<a class="btn {{if eq $q.View "week"}}btn-primary{{else}}btn-outline-secondary{{end}}" href="{{$q.URL "view" ""}}">{{.T "ops64.view.week"}}</a>
+			<a class="btn {{if eq $q.View "month"}}btn-primary{{else}}btn-outline-secondary{{end}}" href="{{$q.URL "view" "month"}}">{{.T "ops64.view.month"}}</a>
+		</div>
+		{{if ne $q.View "month"}}<div class="btn-group btn-group-sm" role="group" aria-label="{{.T "ops64.plan.window"}}" id="ops-windows">
+			<a class="btn {{if eq $d.Win "night"}}btn-secondary{{else}}btn-outline-secondary{{end}}" href="{{$q.URL "win" "night"}}">{{.T "ops64.win.night"}}</a>
+			<a class="btn {{if eq $d.Win "full"}}btn-secondary{{else}}btn-outline-secondary{{end}}" href="{{$q.URL "win" "full"}}">{{.T "ops64.win.full"}}</a>
+		</div>{{end}}
+	</div>
+	<div class="card-body border-bottom py-2">
+		<form method="get" action="/ops64" class="d-flex flex-wrap align-items-center gap-2 small" id="ops-filter">
+			{{if ne $q.View "week"}}<input type="hidden" name="view" value="{{$q.View}}">{{end}}
+			{{if $q.Win}}<input type="hidden" name="win" value="{{$q.Win}}">{{end}}
+			{{if $q.D}}<input type="hidden" name="d" value="{{$q.D}}">{{end}}
+			{{if $q.Sel}}<input type="hidden" name="sel" value="{{$q.Sel}}">{{end}}
+			<label for="ops-f-host" class="text-body-secondary">{{.T "ops64.col.host"}}</label>
+			<select class="form-select form-select-sm w-auto" id="ops-f-host" name="host" data-autosubmit>
+				<option value="">{{.T "ops64.filter.all_hosts"}}</option>
+				{{range $d.Hosts}}<option value="{{.Name}}"{{if eq .Name $q.Host}} selected{{end}}>{{.Host}}</option>{{end}}
+			</select>
+			<label for="ops-f-kind" class="text-body-secondary">{{.T "ops64.col.kind"}}</label>
+			<select class="form-select form-select-sm w-auto" id="ops-f-kind" name="kind" data-autosubmit>
+				<option value="">{{.T "ops64.filter.all_kinds"}}</option>
+				{{range $d.Kinds}}<option value="{{.}}"{{if eq . $q.Kind}} selected{{end}}>{{$.T (print "ops64.kind." .)}}</option>{{end}}
+			</select>
+			{{if ne $q.View "month"}}<label for="ops-f-status" class="text-body-secondary">{{.T "ops64.col.status"}}</label>
+			<select class="form-select form-select-sm w-auto" id="ops-f-status" name="status" data-autosubmit>
+				<option value="">{{.T "ops64.filter.all_status"}}</option>
+				{{range $d.Statuses}}<option value="{{.}}"{{if eq . $q.Status}} selected{{end}}>{{$.T (print "ops64.status." .)}}</option>{{end}}
+			</select>{{end}}
+			<noscript><button class="btn btn-sm btn-outline-secondary" type="submit">{{.T "ops64.filter.apply"}}</button></noscript>
+			{{if ne $q.View "month"}}<span class="ms-auto text-body-secondary" id="ops-count">{{.T "ops64.plan.count" "n" $d.Shown "total" $d.Total}}</span>{{end}}
+		</form>
+	</div>
+	{{if eq $q.View "month"}}
+	<div class="card-body">
+		<div class="ops-month" id="ops-month">
+			{{range (split "1 2 3 4 5 6 0")}}<div class="ops-month-head">{{$.T (print "ops64.dow." .)}}</div>{{end}}
+			{{range $d.Weeks}}{{range .}}
+			{{if .Day}}<a class="ops-month-day{{if .Today}} ops-today{{end}}" href="{{.URL}}">
+				<span class="ops-month-num">{{.Day}}.</span>
+				<span class="ops-month-count">{{if .Count}}{{$.T "ops64.month_tasks" "n" .Count}}{{else}}<span class="text-body-tertiary">–</span>{{end}}</span>
+				<span class="ops-month-flags">{{if .Fail}}<span class="badge text-bg-danger">{{$.T "ops64.month_fail" "n" .Fail}}</span> {{end}}{{if .Overdue}}<span class="badge text-bg-warning">{{$.T "ops64.month_overdue" "n" .Overdue}}</span> {{end}}{{if .Run}}<span class="badge ops-badge-running">{{$.T "ops64.month_running" "n" .Run}}</span> {{end}}{{if .Overlap}}<span class="badge ops-badge-overlap">{{$.T "ops64.overlap"}}</span>{{end}}</span>
+			</a>{{else}}<div class="ops-month-day ops-month-empty"></div>{{end}}
+			{{end}}{{end}}
+		</div>
+	</div>
+	{{else}}
+	<div class="ops-scroll">
+		<div class="ops-tl{{if not $d.Days}} ops-tl-day{{end}}" id="ops-timeline">
+			<div class="ops-row ops-head">
+				<div class="ops-name">{{.T "ops64.col.task"}}</div>
+				<div class="ops-axis"><span class="ops-axis-title">{{.T "ops64.plan.day_axis" "day" $d.DayLabel}}</span>{{range $d.Ticks}}<span class="ops-tick" style="left:{{pct .Left}}%">{{.Label}}</span>{{end}}</div>
+				{{if $d.Days}}<div class="ops-cells">{{range $d.Days}}<a class="ops-dayhead{{if .Selected}} ops-sel-day{{end}}{{if .Today}} ops-today{{end}}" href="{{.URL}}" title="{{.Date}}">{{.Label}}</a>{{end}}</div>{{end}}
+			</div>
+			<div class="ops-rows">
+				<div class="ops-over" aria-hidden="true">
+					{{range $d.Bands}}<span class="ops-band" style="left:{{pct .Left}}%;width:{{pct .Width}}%"></span>{{end}}
+					{{if $d.ShowNow}}<span class="ops-now" style="left:{{pct $d.NowLeft}}%"></span>{{end}}
+				</div>
+				{{range $d.Rows}}
+				<div class="ops-row{{if .Selected}} ops-row-sel{{end}}">
+					<div class="ops-name">{{if .URL}}<a class="ops-task" href="{{.URL}}">{{.Name}}</a>{{else}}<span class="ops-task">{{.Name}}</span>{{end}}<span class="ops-sub" title="{{.Sub}}">{{.Sub}}</span></div>
+					<div class="ops-axis">{{range .Bars}}<span class="ops-bar ops-st-{{.Status}}{{if .Unclear}} ops-unclear{{end}}{{if .Long}} ops-long{{end}}{{if .TextLeft}} ops-text-left{{end}}" style="left:{{pct .Left}}%;width:{{pct .Width}}%" title="{{.Title}}"><span class="ops-bar-text">{{.Text}}{{if .Extra}} · {{$.T "ops64.extra_short"}}{{end}}</span></span>{{end}}</div>
+					{{if .Cells}}<div class="ops-cells">{{range .Cells}}{{if .Status}}<a class="ops-cell ops-st-{{.Status}}" href="{{.URL}}" title="{{.Title}}"><i class="bi {{if eq .Status "ok"}}bi-check-lg{{else if eq .Status "fail"}}bi-x-lg{{else if eq .Status "overdue"}}bi-exclamation-lg{{else if eq .Status "running"}}bi-play-fill{{else if eq .Status "planned"}}bi-circle{{else}}bi-dash{{end}}"></i><span class="visually-hidden">{{$.T (print "ops64.status." .Status)}}</span></a>{{else}}<span class="ops-cell ops-cell-none">–</span>{{end}}{{end}}</div>{{end}}
+				</div>
+				{{else}}
+				<div class="p-3 text-body-secondary small" id="ops-plan-empty">{{.T "ops64.plan.empty"}}</div>
+				{{end}}
+			</div>
+		</div>
+	</div>
+	{{if or $d.Notes $d.Frequent}}<div class="card-body border-top py-2 small" id="ops-notes">
+		{{range $d.Notes}}<div class="ops-note"><span class="badge ops-badge-overlap">{{$.T "ops64.overlap_at" "time" .Time}}</span> {{.Names}}</div>{{end}}
+		{{if $d.Frequent}}<div class="text-body-secondary mt-1"><i class="bi bi-arrow-repeat"></i> {{.T "ops64.plan.frequent"}} {{join $d.Frequent "; "}}</div>{{end}}
+	</div>{{end}}
+	{{end}}
+	<div class="card-footer small d-flex flex-wrap gap-3 text-body-secondary" id="ops-legend">
+		<span><span class="ops-cell ops-st-planned ops-legend-box"><i class="bi bi-circle"></i></span> {{.T "ops64.status.planned"}}</span>
+		<span><span class="ops-cell ops-st-running ops-legend-box"><i class="bi bi-play-fill"></i></span> {{.T "ops64.status.running"}}</span>
+		<span><span class="ops-cell ops-st-ok ops-legend-box"><i class="bi bi-check-lg"></i></span> {{.T "ops64.status.ok"}}</span>
+		<span><span class="ops-cell ops-st-fail ops-legend-box"><i class="bi bi-x-lg"></i></span> {{.T "ops64.status.fail"}}</span>
+		<span><span class="ops-cell ops-st-overdue ops-legend-box"><i class="bi bi-exclamation-lg"></i></span> {{.T "ops64.status.overdue"}}</span>
+		<span><span class="ops-cell ops-st-unknown ops-legend-box"><i class="bi bi-dash"></i></span> {{.T "ops64.status.unknown"}}</span>
+		<span><span class="ops-legend-dash"></span> {{.T "ops64.unclear"}}</span>
+		<span><span class="ops-legend-band"></span> {{.T "ops64.overlap"}}</span>
+		<span><span class="ops-legend-now"></span> {{.T "ops64.now"}}</span>
+	</div>
+</div>
+
+<div class="card mb-3" id="ops-sel">
+	{{with $d.Sel}}
+	<div class="card-header d-flex flex-wrap align-items-center gap-2">
+		<span class="text-body-secondary small text-uppercase">{{$.T "ops64.sel.title"}}</span> <span class="fw-semibold" id="ops-sel-name">{{.Job.Name}}</span>
+		{{if .Status}}<span class="badge ops-badge-{{.Status}}">{{$.T (print "ops64.status." .Status)}}</span>{{end}}
+		{{if not .Job.Shown}}<span class="badge text-bg-light border">{{$.T "ops64.status.hidden"}}</span>{{end}}
+		<a class="ms-auto small" href="{{.BackURL}}">{{$.T "ops64.sel.close"}}</a>
+	</div>
+	<div class="card-body">
+		<div class="row g-4">
+			<div class="col-lg-6">
+				<dl class="row small mb-2 ops-facts">
+					<dt class="col-4">{{$.T "ops64.col.kind"}}</dt><dd class="col-8">{{$.T (print "ops64.kind." .Job.Kind)}}{{if .Job.System}} · {{$.T "ops64.sel.system"}}{{end}}</dd>
+					<dt class="col-4">{{$.T "ops64.col.host"}}</dt><dd class="col-8">{{.Job.Host}}</dd>
+					{{if .Job.Target}}<dt class="col-4">{{$.T "ops64.col.target"}}</dt><dd class="col-8">{{.Job.Target}}</dd>{{end}}
+					<dt class="col-4">{{$.T "ops64.col.schedule"}}</dt><dd class="col-8">{{.Sched}}{{if ne .Sched .Job.Schedule}} <span class="font-monospace text-body-secondary">({{.Job.Schedule}})</span>{{end}}{{if and (not .Job.Sched) .Job.Schedule}} <span class="badge text-bg-warning">{{$.T "ops64.sched.bad"}}</span>{{end}}{{if .Job.Frequent}} <span class="badge text-bg-light border">{{$.T "ops64.sched.frequent"}}</span>{{end}}</dd>
+					{{if .Job.Command}}<dt class="col-4">{{$.T "ops64.col.command"}}</dt><dd class="col-8 font-monospace text-break">{{.Job.Command}}</dd>{{end}}
+					<dt class="col-4">{{$.T "ops64.sel.next"}}</dt><dd class="col-8">{{if not .Job.Enabled}}{{$.T "ops64.status.off"}}{{else if .Job.Next.IsZero}}–{{else}}{{$.Time .Job.Next}}{{end}}</dd>
+					<dt class="col-4">{{$.T "ops64.sel.expected"}}</dt><dd class="col-8" id="ops-sel-expected">{{if .Expected}}{{.Expected}} <span class="text-body-secondary">({{$.T (print "ops64.sel.from_" .Job.ExpectedFrom)}})</span>{{else}}{{$.T "ops64.unclear"}}{{end}}{{if .Range}}<br><span class="text-body-secondary">{{$.T "ops64.sel.range" "range" .Range}}</span>{{end}}</dd>
+				</dl>
+				{{if .Job.Varies}}<div class="alert alert-warning py-2 small mb-2">{{$.T "ops64.sel.varies"}}</div>{{end}}
+				{{if .Partners}}<div class="alert alert-warning py-2 small mb-2" id="ops-sel-overlap">{{$.T "ops64.sel.overlap" "jobs" (join .Partners ", ")}}</div>{{end}}
+				{{if not .Job.History}}<p class="small text-body-secondary mb-2">{{$.T "ops64.sel.no_history"}}</p>{{end}}
+				<form method="post" action="/ops64/job" class="row g-2 align-items-end small" id="ops-job-form">
+					<input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="source" value="{{.Job.Source}}"><input type="hidden" name="job" value="{{.Job.ID}}"><input type="hidden" name="back" value="{{$q.URL "#" "ops-sel"}}">
+					<div class="col-auto"><label class="form-label mb-1" for="ops-expected">{{$.T "ops64.sel.expected_set"}}</label><input class="form-control form-control-sm" type="number" min="0" max="10080" id="ops-expected" name="expected" value="{{if .ExpectedMin}}{{.ExpectedMin}}{{end}}" placeholder="{{$.T "ops64.sel.expected_auto"}}"></div>
+					<div class="col-auto"><label class="form-label mb-1" for="ops-visible">{{$.T "ops64.sel.visible"}}</label><select class="form-select form-select-sm" id="ops-visible" name="visible">
+						<option value=""{{if eq .Job.Visible ""}} selected{{end}}>{{$.T "ops64.sel.visible_auto"}}</option>
+						<option value="show"{{if eq .Job.Visible "show"}} selected{{end}}>{{$.T "ops64.sel.visible_show"}}</option>
+						<option value="hide"{{if eq .Job.Visible "hide"}} selected{{end}}>{{$.T "ops64.sel.visible_hide"}}</option>
+					</select></div>
+					<div class="col-auto"><button class="btn btn-sm btn-primary" type="submit">{{$.T "common.save"}}</button></div>
+				</form>
+			</div>
+			<div class="col-lg-6">
+				<div class="text-body-secondary small text-uppercase mb-1">{{$.T "ops64.sel.history"}}</div>
+				{{if .Runs}}<table class="table table-sm small mb-0" id="ops-sel-runs"><tbody>
+					{{range .Runs}}<tr><td class="text-nowrap"><span class="ops-dot ops-st-{{.Status}}"></span> {{$.Time .Start}}</td><td class="text-body-secondary">{{.Detail}}</td><td class="text-end text-nowrap">{{.Dur}}{{if .Long}} <i class="bi bi-hourglass-split text-warning" title="{{$.T "ops64.long"}}"></i>{{end}}</td><td class="text-end text-nowrap ops-text-{{.Status}}">{{$.T (print "ops64.status." .Status)}}</td></tr>{{end}}
+				</tbody></table>{{else}}<p class="small text-body-secondary mb-0">{{$.T "ops64.sel.no_runs"}}</p>{{end}}
+			</div>
+		</div>
+	</div>
+	{{else}}
+	<div class="card-body small text-body-secondary"><i class="bi bi-hand-index"></i> {{.T "ops64.sel.hint"}}</div>
+	{{end}}
+</div>
+
+<div class="card mb-3" id="ops-areas">
+	<div class="card-header d-flex flex-wrap align-items-center gap-2">
+		<span class="fw-semibold me-auto">{{.T "ops64.areas.title"}}</span>
+		{{if $d.HiddenCount}}<a class="small" href="{{if $q.Sys}}{{$q.URL "sys" "" "#" "ops-areas"}}{{else}}{{$q.URL "sys" "1" "#" "ops-areas"}}{{end}}" id="ops-sys-toggle">{{if $q.Sys}}{{.T "ops64.areas.sys_hide"}}{{else}}{{.T "ops64.areas.sys_show" "n" $d.HiddenCount}}{{end}}</a>{{end}}
+		<div class="btn-group btn-group-sm" role="group" id="ops-tabs">
+			<a class="btn {{if eq $q.Tab "backup"}}btn-secondary{{else}}btn-outline-secondary{{end}}" href="{{$q.URL "tab" "" "#" "ops-areas"}}">{{.T "ops64.areas.backups"}} <span class="badge text-bg-light">{{$d.NBackups}}</span></a>
+			<a class="btn {{if eq $q.Tab "tasks"}}btn-secondary{{else}}btn-outline-secondary{{end}}" href="{{$q.URL "tab" "tasks" "#" "ops-areas"}}">{{.T "ops64.areas.tasks"}} <span class="badge text-bg-light">{{$d.NTasks}}</span></a>
+		</div>
+	</div>
+	{{$rows := $d.Backups}}{{if eq $q.Tab "tasks"}}{{$rows = $d.Tasks}}{{end}}
+	{{if $rows}}
+	<div class="table-responsive">
+		<table class="table table-sm table-hover mb-0 small table-stack align-middle" id="ops-area-table">
+			<thead><tr><th>{{.T "ops64.col.task"}}</th><th>{{.T "ops64.col.host"}}</th><th>{{if eq $q.Tab "tasks"}}{{.T "ops64.col.command"}}{{else}}{{.T "ops64.col.target"}}{{end}}</th><th>{{.T "ops64.col.last"}}</th><th>{{.T "ops64.col.duration"}}</th><th>{{.T "ops64.col.next"}}</th><th>{{.T "ops64.col.state"}}</th></tr></thead>
+			<tbody>
+			{{range $rows}}
+			<tr{{if not .Job.Shown}} class="ops-row-hidden"{{end}}>
+				<td data-label="{{$.T "ops64.col.task"}}"><a class="fw-semibold" href="{{.URL}}">{{.Job.Name}}</a><br><span class="text-body-secondary">{{if ne $q.Tab "backup"}}{{$.T (print "ops64.kind." .Job.Kind)}} · {{end}}{{.Sched}}{{if .BadSched}} <span class="badge text-bg-warning">{{$.T "ops64.sched.bad"}}</span>{{end}}{{if .Job.Frequent}} <span class="badge text-bg-light border">{{$.T "ops64.sched.frequent"}}</span>{{end}}</span></td>
+				<td data-label="{{$.T "ops64.col.host"}}">{{.Job.Host}}</td>
+				<td data-label="{{if eq $q.Tab "tasks"}}{{$.T "ops64.col.command"}}{{else}}{{$.T "ops64.col.target"}}{{end}}" class="{{if eq $q.Tab "tasks"}}font-monospace text-break ops-cmd{{end}}">{{if eq $q.Tab "tasks"}}{{.Job.Command}}{{else}}{{.Job.Target}}{{end}}</td>
+				<td data-label="{{$.T "ops64.col.last"}}" class="text-nowrap">{{if .Job.Last}}{{$.Time .Job.Last.Start}}{{else}}<span class="text-body-tertiary">–</span>{{end}}</td>
+				<td data-label="{{$.T "ops64.col.duration"}}" class="text-nowrap">{{if .LastDur}}{{.LastDur}}{{else}}<span class="text-body-tertiary">–</span>{{end}}</td>
+				<td data-label="{{$.T "ops64.col.next"}}" class="text-nowrap">{{if .Job.Next.IsZero}}<span class="text-body-tertiary">–</span>{{else}}{{$.Time .Job.Next}}{{end}}</td>
+				<td data-label="{{$.T "ops64.col.state"}}"><span class="badge ops-badge-{{.Status}}">{{$.T (print "ops64.status." .Status)}}</span></td>
+			</tr>
+			{{end}}
+			</tbody>
+		</table>
+	</div>
+	{{else}}
+	<div class="card-body small text-body-secondary">{{.T "ops64.areas.empty"}}</div>
+	{{end}}
+	<div class="card-footer small text-body-secondary">{{.T "ops64.areas.hint"}}</div>
+</div>
+{{end}}
+
+<div class="row g-3">
+	<div class="col-xl-6">
+		<div class="card h-100" id="ops-alerts">
+			<div class="card-header d-flex align-items-center gap-2"><i class="bi bi-bell text-primary"></i> <span class="me-auto">{{.T "ops64.alerts.title"}}</span> <a class="small" href="/notifications">{{.T "ops64.alerts.channels"}}</a></div>
+			{{if $d.Alerts}}<ul class="list-group list-group-flush small">
+				{{range $d.Alerts}}<li class="list-group-item d-flex gap-2 align-items-baseline"><span class="badge ops-badge-alert-{{.Kind}}">{{$.T (print "ops64.alert." .Kind)}}</span> <span class="me-auto">{{.Text}}</span> <span class="text-body-secondary text-nowrap">{{$.Ago .At}}</span></li>{{end}}
+			</ul>{{else}}<div class="card-body small text-body-secondary">{{.T "ops64.alerts.empty"}}</div>{{end}}
+			<div class="card-footer">
+				<form method="post" action="/ops64/notify" class="d-flex flex-wrap align-items-center gap-3 small" id="ops-notify-form">
+					<input type="hidden" name="_csrf" value="{{.CSRF}}">
+					<span class="text-body-secondary">{{.T "ops64.alerts.notify"}}</span>
+					{{range $d.Notify}}<div class="form-check mb-0"><input class="form-check-input" type="checkbox" name="{{.Kind}}" value="1" id="ops-n-{{.Kind}}"{{if .On}} checked{{end}}><label class="form-check-label" for="ops-n-{{.Kind}}">{{$.T (print "ops64.alert." .Kind)}}</label></div>{{end}}
+					<button class="btn btn-sm btn-outline-secondary ms-auto" type="submit">{{.T "common.save"}}</button>
+				</form>
+			</div>
+		</div>
+	</div>
+	<div class="col-xl-6">
+		<div class="card h-100" id="ops-sources">
+			<div class="card-header d-flex align-items-center gap-2"><i class="bi bi-hdd-rack text-primary"></i> {{.T "ops64.sources.title"}}</div>
+			{{if $d.Sources}}<div class="table-responsive"><table class="table table-sm mb-0 small table-stack align-middle">
+				<thead><tr><th>{{.T "ops64.col.host"}}</th><th>{{.T "ops64.sources.jobs"}}</th><th>{{.T "ops64.sources.updated"}}</th><th></th></tr></thead>
+				<tbody>
+				{{range $d.Sources}}<tr>
+					<td data-label="{{$.T "ops64.col.host"}}"><span class="fw-semibold">{{.Host}}</span>{{if ne .Host .Name}} <span class="font-monospace text-body-secondary">{{.Name}}</span>{{end}}{{if .Collector}}<br><span class="text-body-secondary">{{$.T "ops64.sources.collector" "name" .Collector}}{{if .Timezone}} · {{.Timezone}}{{end}}</span>{{end}}{{range .Notes}}<br><span class="text-warning-emphasis"><i class="bi bi-exclamation-triangle"></i> {{.}}</span>{{end}}</td>
+					<td data-label="{{$.T "ops64.sources.jobs"}}">{{.Jobs}}</td>
+					<td data-label="{{$.T "ops64.sources.updated"}}" class="text-nowrap">{{$.Ago .Updated}}{{if .Stale}} <span class="badge text-bg-warning">{{$.T "ops64.sources.stale"}}</span>{{end}}</td>
+					<td class="text-end"><form method="post" action="/ops64/source/delete" class="d-inline"><input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="name" value="{{.Name}}"><button class="btn btn-sm btn-outline-danger" type="submit" data-confirm="{{$.T "ops64.sources.delete_confirm" "name" .Host}}" title="{{$.T "common.delete"}}" aria-label="{{$.T "common.delete"}}"><i class="bi bi-trash"></i></button></form></td>
+				</tr>{{end}}
+				</tbody>
+			</table></div>{{else}}<div class="card-body small text-body-secondary" id="ops-sources-empty">{{.T "ops64.sources.empty"}}</div>{{end}}
+			<div class="card-footer small text-body-secondary">{{.T "ops64.sources.hint"}}</div>
+		</div>
+	</div>
+</div>
+{{end}}

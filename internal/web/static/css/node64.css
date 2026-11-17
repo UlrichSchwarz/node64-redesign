@@ -361,3 +361,78 @@ tr.ipam-hit > * { --bs-table-bg-state: var(--bs-primary-bg-subtle); }
 .ipam-lvl-child { background: repeating-linear-gradient(45deg, var(--bs-tertiary-bg) 0 3px, var(--bs-secondary-bg) 3px 6px); }
 .ipam-map .ipam-cell { text-decoration: none; }
 @media (max-width: 767.98px) { .ipam-row { grid-template-columns: repeat(16, minmax(0, 1fr)); } .ipam-row .ipam-cell { font-size: .55rem; } }
+/* OPS64: Zeitplan (je Aufgabe eine Zeile mit Balken auf der Zeitachse und dem Zustand je Wochentag), Monatsansicht
+   und Zustandsfarben (Bootstrap-Farben, beide Designs) */
+.ops-scroll { overflow-x: auto; }
+.ops-tl { --ops-name: 17rem; --ops-cells: 16.5rem; --ops-st: var(--bs-secondary-color); min-width: 62rem; font-size: .8125rem; }
+.ops-tl-day { --ops-cells: 1rem; }
+.ops-row { display: grid; grid-template-columns: var(--ops-name) minmax(0, 1fr) var(--ops-cells); align-items: stretch; border-bottom: 1px solid var(--bs-border-color-translucent); min-height: 2.9rem; }
+.ops-rows { position: relative; }
+.ops-rows .ops-row:last-child { border-bottom: 0; }
+.ops-row-sel { background: rgba(var(--bs-warning-rgb), .14); }
+.ops-head { min-height: 2.6rem; font-size: .75rem; color: var(--bs-secondary-color); font-weight: 600; align-items: end; }
+.ops-name { padding: .35rem .75rem; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+.ops-head .ops-name { justify-content: flex-end; }
+.ops-task { font-weight: 600; color: var(--bs-body-color); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+a.ops-task:hover { text-decoration: underline; }
+.ops-sub { color: var(--bs-secondary-color); font-size: .72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ops-axis { position: relative; min-width: 0; background-image: linear-gradient(90deg, var(--bs-border-color-translucent) 1px, transparent 1px); background-size: 8.3333% 100%; }
+.ops-head .ops-axis { background: none; height: 2.6rem; }
+.ops-axis-title { position: absolute; left: 0; top: .1rem; font-weight: 600; white-space: nowrap; }
+.ops-tick { position: absolute; bottom: .3rem; transform: translateX(-50%); font-family: var(--bs-font-monospace); font-weight: 400; }
+.ops-tick:first-of-type { transform: none; }
+.ops-tick:last-of-type { transform: translateX(-100%); }
+.ops-over { position: absolute; top: 0; bottom: 0; left: var(--ops-name); right: var(--ops-cells); pointer-events: none; z-index: 1; }
+.ops-band { position: absolute; top: 0; bottom: 0; background: rgba(var(--bs-danger-rgb), .1); border-left: 2px solid var(--bs-danger); border-right: 2px solid var(--bs-danger); }
+.ops-now { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--bs-warning); }
+.ops-bar { position: absolute; top: 50%; height: 1.4rem; margin-top: -.7rem; min-width: .5rem; border-radius: .3rem; border: 1.5px solid var(--ops-st); background: color-mix(in srgb, var(--ops-st) 18%, transparent); z-index: 2; }
+.ops-bar-text { position: absolute; left: 100%; top: 50%; transform: translateY(-50%); margin-left: .4rem; white-space: nowrap; font-size: .72rem; font-weight: 600; color: var(--ops-st); pointer-events: none; }
+.ops-text-left .ops-bar-text { left: auto; right: 100%; margin: 0 .4rem 0 0; }
+.ops-unclear, .ops-st-overdue.ops-bar, .ops-st-planned.ops-bar { border-style: dashed; }
+.ops-long { box-shadow: 0 0 0 2px rgba(var(--bs-warning-rgb), .5); }
+.ops-st-planned { --ops-st: var(--bs-secondary-color); }
+.ops-st-unknown { --ops-st: var(--bs-tertiary-color); }
+.ops-st-running { --ops-st: var(--bs-info); }
+.ops-st-ok { --ops-st: var(--bs-success); }
+.ops-st-fail { --ops-st: var(--bs-danger); }
+.ops-st-overdue { --ops-st: var(--bs-warning-text-emphasis); }
+.ops-st-overdue.ops-bar, .ops-st-overdue.ops-cell { background: rgba(var(--bs-warning-rgb), .22); }
+.ops-cells { display: grid; grid-template-columns: repeat(7, 1fr); gap: .3rem; align-items: center; justify-items: center; padding: .3rem .6rem; }
+.ops-tl-day .ops-cells { display: none; }
+.ops-cell { display: inline-flex; align-items: center; justify-content: center; width: 1.7rem; height: 1.6rem; border-radius: .3rem; border: 1.5px solid var(--ops-st); color: var(--ops-st); background: color-mix(in srgb, var(--ops-st) 12%, transparent); text-decoration: none; font-size: .8rem; }
+a.ops-cell:hover { background: color-mix(in srgb, var(--ops-st) 30%, transparent); }
+.ops-cell-none { border-color: transparent; background: none; color: var(--bs-tertiary-color); }
+.ops-cell.ops-st-overdue { border-style: dashed; }
+.ops-dayhead { display: inline-flex; align-items: center; justify-content: center; width: 1.9rem; height: 1.5rem; border-radius: .3rem; color: var(--bs-secondary-color); text-decoration: none; font-weight: 600; border: 1px solid transparent; }
+.ops-dayhead:hover { background: var(--bs-secondary-bg); }
+.ops-dayhead.ops-today { color: var(--bs-body-color); text-decoration: underline; }
+.ops-dayhead.ops-sel-day { background: rgba(var(--bs-warning-rgb), .2); border-color: var(--bs-warning); color: var(--bs-body-color); }
+.ops-note + .ops-note { margin-top: .25rem; }
+.ops-badge-overlap, .ops-badge-alert-overlap, .ops-badge-fail, .ops-badge-alert-fail { background: rgba(var(--bs-danger-rgb), .14); color: var(--bs-danger-text-emphasis); }
+.ops-badge-ok { background: rgba(var(--bs-success-rgb), .16); color: var(--bs-success-text-emphasis); }
+.ops-badge-running { background: rgba(var(--bs-info-rgb), .16); color: var(--bs-info-text-emphasis); }
+.ops-badge-overdue, .ops-badge-alert-overdue, .ops-badge-alert-long, .ops-badge-alert-stale { background: rgba(var(--bs-warning-rgb), .22); color: var(--bs-warning-text-emphasis); }
+.ops-badge-unknown, .ops-badge-none, .ops-badge-off, .ops-badge-hidden, .ops-badge-planned { background: var(--bs-secondary-bg); color: var(--bs-secondary-color); }
+.ops-text-ok { color: var(--bs-success-text-emphasis); } .ops-text-fail { color: var(--bs-danger-text-emphasis); }
+.ops-text-running { color: var(--bs-info-text-emphasis); } .ops-text-unknown { color: var(--bs-secondary-color); }
+.ops-dot { display: inline-block; width: .55rem; height: .55rem; border-radius: 50%; background: var(--ops-st); margin-right: .25rem; }
+.ops-legend-box { width: 1.3rem; height: 1.2rem; font-size: .7rem; vertical-align: middle; }
+.ops-legend-dash { display: inline-block; width: 1.4rem; height: .8rem; border: 1.5px dashed var(--bs-secondary-color); border-radius: .25rem; vertical-align: middle; }
+.ops-legend-band { display: inline-block; width: 1rem; height: .9rem; background: rgba(var(--bs-danger-rgb), .1); border-left: 2px solid var(--bs-danger); border-right: 2px solid var(--bs-danger); vertical-align: middle; }
+.ops-legend-now { display: inline-block; width: 2px; height: .9rem; background: var(--bs-warning); vertical-align: middle; }
+.ops-month { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .4rem; }
+.ops-month-head { font-size: .75rem; font-weight: 600; color: var(--bs-secondary-color); padding: 0 .4rem; }
+.ops-month-day { display: flex; flex-direction: column; gap: .1rem; min-height: 4.6rem; padding: .4rem .5rem; border: 1px solid var(--bs-border-color); border-radius: .4rem; text-decoration: none; color: var(--bs-body-color); font-size: .78rem; }
+a.ops-month-day:hover { background: var(--bs-tertiary-bg); }
+.ops-month-day.ops-today { border-color: var(--bs-warning); background: rgba(var(--bs-warning-rgb), .12); }
+.ops-month-empty { border-style: dashed; border-color: var(--bs-border-color-translucent); }
+.ops-month-num { font-weight: 700; }
+.ops-month-count { color: var(--bs-secondary-color); }
+.ops-month-flags .badge { font-weight: 600; }
+.ops-code { background: var(--bs-tertiary-bg); border: 1px solid var(--bs-border-color); border-radius: .375rem; padding: .5rem .75rem; margin-top: .25rem; white-space: pre-wrap; word-break: break-all; font-size: .78rem; }
+.ops-guide li + li { margin-top: .5rem; }
+.ops-facts dt { font-weight: 400; color: var(--bs-secondary-color); }
+.ops-facts dd { margin-bottom: .3rem; }
+.ops-cmd { max-width: 28rem; }
+.ops-row-hidden { opacity: .6; }
+@media (max-width: 767.98px) { .ops-month { gap: .2rem; } .ops-month-day { min-height: 3.6rem; padding: .25rem; font-size: .68rem; } .ops-month-flags .badge { font-size: .6rem; padding: .15em .3em; } }

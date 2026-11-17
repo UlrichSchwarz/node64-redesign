@@ -1,0 +1,18 @@
+# OPS64 – Changes
+
+## 0.1.0 – unreleased
+
+New (design and implementation from the community, UlrichSchwarz):
+
+- Operations & maintenance in one place: hosts report their backup jobs, cron jobs and timers with their runs to the node (`PUT /api/ops64/sources/<name>`). OPS64 only reads and changes nothing on the hosts.
+- Collector for Linux hosts (Python 3, no extra packages, via cron): backup jobs and backup runs of Proxmox VE, jobs of Proxmox Backup Server, systemd timers with their last run and all crontabs. Passwords and tokens in command lines are masked before sending. Guide and download under *OPS64 → Add host*.
+- Schedule by day, week and month: one row per task with bars on the time axis (night and morning or whole day) and the state per weekday; states planned, running, successful, failed, overdue, no feedback. Filters by host, type and status.
+- The node reads the schedules itself: cron (including `@daily` …) and calendar expressions of systemd and Proxmox (`mon..fri 02:00`, `*-*-01 04:00:00`, `daily`), in the host's time zone.
+- Expected duration from the last successful runs (median; the longest if they vary a lot) or set by hand; otherwise "duration unclear".
+- Concurrent tasks: overlaps across all hosts as a red band in the schedule, with the tasks involved.
+- Details and history per task; tasks can be hidden and shown (system tasks are hidden by default).
+- Lists "Backups" and "Cron jobs & timers" with last and next run.
+- Alerts via the default channels, switchable per kind: failure, overdue task, unusually long run, tasks planned at the same time, host stopped reporting.
+- API `/api/ops64/…` (hosts, tasks, schedule), dashboard card, audit area "OPS64".
+
+Not included yet: shared control ("no concurrent jobs" – each job waits for the previous one), hints on LXC updates and firmware.

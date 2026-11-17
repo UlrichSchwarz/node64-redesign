@@ -372,6 +372,17 @@ Das Modul *IPAM64* (in den Einstellungen einschalten, standardmäßig aus) verwa
 
 Einzelheiten: [docs/IPAM64.md](docs/IPAM64.md). Grundlage war ein Entwurf aus der Community (UlrichSchwarz).
 
+## OPS64 (Betrieb & Wartung)
+
+Das Modul *OPS64* (in den Einstellungen einschalten, standardmäßig aus) zeigt die geplanten Aufgaben aller Hosts an einer Stelle:
+
+- **Zeitplan** für Tag, Woche und Monat: Backups, Cronjobs und Timer mit Start, Dauer, Host und Ziel; Zustände geplant, laufend, erfolgreich, fehlgeschlagen, überfällig.
+- **Überschneidungen:** Aufgaben, die gleichzeitig laufen, über alle Hosts; Hinweis bei unklarer Laufzeit.
+- **Meldungen** über die Benachrichtigungskanäle der Node: Fehler, überfällige Aufgaben, ungewöhnlich lange Läufe, Host meldet sich nicht mehr.
+- **Hosts** melden über einen kleinen Sammler (Python 3, per cron): Proxmox VE, Proxmox Backup Server, systemd-Timer, crontabs. OPS64 liest nur mit und ändert nichts an den Hosts. API `/api/ops64/*`.
+
+Einzelheiten: [docs/OPS64.md](docs/OPS64.md). Entwurf und Umsetzung aus der Community (UlrichSchwarz).
+
 ## Honeypot64 (Fallen-Dienste)
 
 Das Modul *Honeypot64* (in den Einstellungen einschalten, standardmäßig aus) stellt Fallen-Dienste auf, die Angreifer anlocken: SSH und Telnet (Logins werden immer abgelehnt und mit Benutzername und Passwort erfasst), HTTP/HTTPS mit neutralen Login-Ködern und Einordnung der Web-Angriffe nach OWASP (SQL-Injection, Log4Shell, Path Traversal …), beliebige TCP-Ports (erste Bytes, z. B. RDP-Benutzername) und Port-Scan-Erkennung. Je Port wählbare Dienst-Profile (z. B. OpenSSH Debian/Ubuntu oder Dropbear, BusyBox- oder Linux-Telnet, MySQL oder MariaDB, nginx, Apache, Proxmox VE, Webmin, Home Assistant, Grafana, NAS, Elasticsearch) bestimmen Banner, Kopfzeilen, Antworten und Zertifikat; Hostname und Versionen variieren stabil je Sensor. Low Interaction: nichts wird ausgeführt, keine ausgehenden Verbindungen, Limits je IP. Profile `minimal`, `standard`, `full` oder eigene Auswahl; belegte Ports (PROXY64, DNS64, Streams) werden erkannt. Auswertung unter *Honeypot64*: Dienste, Verlauf, Top-IPs, Zugangsdaten, Pfade, User-Agents, letzte Ereignisse; Prometheus (`node64_honeypot_*`), optional Meldung bei neuen Angreifern. Daten lokal 7 Tage. API: `/api/honeypot/*`.

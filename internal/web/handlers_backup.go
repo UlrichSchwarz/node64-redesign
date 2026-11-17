@@ -63,6 +63,9 @@ func bodyLimitFor(path string) int64 {
 	if strings.HasPrefix(path, "/api/ipam64/sources/") { // Meldung eines fremden DHCP-Servers, JSON bis 4 MB (ipam64/sources.go)
 		return 4<<20 + 64<<10
 	}
+	if strings.HasPrefix(path, "/api/ops64/sources/") { // OPS64: Meldung eines Hosts als JSON bis 2 MB (ops64.MaxBodySize)
+		return 2<<20 + 64<<10
+	}
 	return maxBody
 }
 

@@ -1,0 +1,25 @@
+Id=apt-daily.service
+ActiveState=inactive
+SubState=dead
+Result=success
+ExecMainStatus=0
+ExecStart={ path=/usr/lib/apt/apt.systemd.daily ; argv[]=/usr/lib/apt/apt.systemd.daily update ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }
+InactiveExitTimestamp=@1794978000
+StateChangeTimestamp=@1794978060
+
+Id=old.service
+ActiveState=inactive
+SubState=dead
+Result=success
+ExecMainStatus=0
+InactiveExitTimestamp=
+StateChangeTimestamp=
+
+Id=snapshot-prune.service
+ActiveState=failed
+SubState=failed
+Result=exit-code
+ExecMainStatus=1
+ExecStart={ path=/usr/local/bin/prune ; argv[]=/usr/local/bin/prune --token abc123secret --keep 7 ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }
+InactiveExitTimestamp=@1794976200
+StateChangeTimestamp=@1794977100
