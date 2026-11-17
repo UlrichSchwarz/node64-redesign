@@ -17,6 +17,7 @@ import (
 
 	"github.com/ipv64net/node64/internal/module"
 	"github.com/ipv64net/node64/internal/notify"
+	"github.com/ipv64net/node64/internal/proxmox"
 	"github.com/ipv64net/node64/internal/store"
 )
 
@@ -32,7 +33,7 @@ var changelogEN string
 const Name = "ops64"
 
 const (
-	version = "0.1.0"
+	version = "0.2.0"
 
 	checkEvery = time.Minute         // Meldungen pruefen
 	runKeep    = 90 * 24 * time.Hour // Laeufe aufbewahren
@@ -48,6 +49,12 @@ type Module struct {
 	now  func() time.Time
 
 	notifier func(notify.Alert)
+
+	apiAccesses func(ctx context.Context) ([]APIAccess, bool) // Zugaenge aus Monitor64 (apipoll.go)
+	newGetter   func(sys proxmox.System) (getter, error)      // nil = proxmox.NewClient (Tests ersetzen es)
+	apiMu       sync.Mutex
+	apiStates   map[string]APIState // Stand des letzten Abrufs je Zugang (nur im Speicher)
+	apiAt       time.Time           // letzter Abruf aller Zugaenge
 
 	mu     sync.Mutex
 	cancel context.CancelFunc
@@ -119,6 +126,9 @@ func (m *Module) loop(ctx context.Context, done chan struct{}) {
 			}
 			pruned = now
 		}
+		if m.APIOn(ctx) && m.apiDue(now) {
+			m.PollAPI(ctx)
+		}
 		if err := m.CheckAlerts(ctx); err != nil && ctx.Err() == nil {
 			m.log.Warn("ops64: alerts", "err", err)
 		}
@@ -128,4 +138,15 @@ func (m *Module) loop(ctx context.Context, done chan struct{}) {
 		case <-t.C:
 		}
 	}
+}
+
+// apiDue meldet, ob der naechste Abruf ueber die API faellig ist, und merkt ihn vor.
+func (m *Module) apiDue(now time.Time) bool {
+	m.apiMu.Lock()
+	defer m.apiMu.Unlock()
+	if !m.apiAt.IsZero() && now.Sub(m.apiAt) < apiEvery {
+		return false
+	}
+	m.apiAt = now
+	return true
 }

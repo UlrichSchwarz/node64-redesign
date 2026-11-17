@@ -5,6 +5,7 @@ Kurz, was sich je Version ändert. Einzelheiten je Modul stehen in der Node unte
 ## Unveröffentlicht
 
 - IPAM64 0.7.0: Fremde DHCP-Server (Router, Firewall) können ihre Netze, festen Zuweisungen und Vergaben an IPAM64 melden; fertiges Skript für pfSense mit Kea zum Herunterladen (Vorschlag aus der Community).
+- OPS64 0.2.0: Backups lassen sich auch ohne Installation über die Proxmox-API lesen (Proxmox VE und Proxmox Backup Server, Zugänge aus Monitor64, Standard aus); Hosts für Cronjobs und Timer bindet eine einzige Zeile in der Shell ein.
 - OPS64: Neues Modul für Betrieb & Wartung (Standard aus) – Backups, Cronjobs und Timer aller Hosts in einem Zeitplan für Tag, Woche und Monat, mit Überschneidungen und Meldungen bei Fehlern, überfälligen Aufgaben und ungewöhnlich langen Läufen. Die Hosts melden über einen kleinen Sammler (Proxmox VE, Proxmox Backup Server, systemd-Timer, cron); OPS64 liest nur mit.
 
 ## 1.7.8 – 2026-11-17

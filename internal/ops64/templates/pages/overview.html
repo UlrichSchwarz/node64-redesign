@@ -14,23 +14,16 @@
 			<p class="mb-2">{{.T "ops64.guide.intro"}}</p>
 			<ol class="mb-2 ops-guide">
 				<li>{{.T "ops64.guide.step_key"}} <a href="/api/docs">{{.T "ops64.guide.step_key_link"}}</a></li>
-				<li>{{.T "ops64.guide.step_load"}}
-					<pre class="ops-code mb-1"><code>curl -fsS -H "Authorization: Bearer $KEY" -o /usr/local/bin/node64-ops {{$d.BaseURL}}/api/ops64/collector/linux.py
-chmod 755 /usr/local/bin/node64-ops</code></pre></li>
-				<li>{{.T "ops64.guide.step_conf"}}
-					<pre class="ops-code mb-1"><code>cat &gt; /etc/node64-ops.conf &lt;&lt;EOF
-url = {{$d.BaseURL}}
-key = $KEY
-EOF
-chmod 600 /etc/node64-ops.conf</code></pre></li>
-				<li>{{.T "ops64.guide.step_test"}}
-					<pre class="ops-code mb-1"><code>node64-ops --dry-run   # {{.T "ops64.guide.test_dry"}}
-node64-ops             # {{.T "ops64.guide.test_send"}}</code></pre></li>
-				<li>{{.T "ops64.guide.step_cron"}}
-					<pre class="ops-code mb-1"><code>echo '*/5 * * * * root /usr/local/bin/node64-ops' &gt; /etc/cron.d/node64-ops</code></pre></li>
+				<li>{{.T "ops64.guide.step_one"}}
+					<pre class="ops-code mb-1" id="ops-oneliner"><code>KEY='node64_…'; U='{{$d.BaseURL}}'; curl -fsS -H "Authorization: Bearer $KEY" -o /usr/local/bin/node64-ops "$U/api/ops64/collector/linux.py" &amp;&amp; chmod 755 /usr/local/bin/node64-ops &amp;&amp; printf 'url = %s\nkey = %s\n{{if $d.APIOn}}skip = pve,pbs\n{{end}}' "$U" "$KEY" &gt; /etc/node64-ops.conf &amp;&amp; chmod 600 /etc/node64-ops.conf &amp;&amp; echo '*/5 * * * * root /usr/local/bin/node64-ops' &gt; /etc/cron.d/node64-ops &amp;&amp; /usr/local/bin/node64-ops &amp;&amp; echo "OPS64: ok"</code></pre>
+					<span class="text-body-secondary">{{.T "ops64.guide.one_writes"}}{{if $d.APIOn}} {{.T "ops64.guide.one_skip"}}{{end}}</span></li>
+				<li>{{.T "ops64.guide.step_check"}}
+					<pre class="ops-code mb-1"><code>node64-ops --dry-run</code></pre></li>
+				<li>{{.T "ops64.guide.step_remove"}}
+					<pre class="ops-code mb-1"><code>rm -f /etc/cron.d/node64-ops /etc/node64-ops.conf /usr/local/bin/node64-ops</code></pre></li>
 			</ol>
 			<p class="mb-1 text-body-secondary">{{.T "ops64.guide.reads"}}</p>
-			<p class="mb-0 text-body-secondary">{{.T "ops64.guide.readonly"}}</p>
+			<p class="mb-0 text-body-secondary">{{.T "ops64.guide.tls_hint"}}</p>
 		</div>
 		<div class="card-footer small"><a href="/ops64/collector/linux.py" id="ops-collector"><i class="bi bi-download"></i> {{.T "ops64.guide.download"}}</a> <span class="text-body-secondary">· {{.T "ops64.guide.api"}}</span></div>
 	</div>
@@ -251,7 +244,7 @@ node64-ops             # {{.T "ops64.guide.test_send"}}</code></pre></li>
 				<thead><tr><th>{{.T "ops64.col.host"}}</th><th>{{.T "ops64.sources.jobs"}}</th><th>{{.T "ops64.sources.updated"}}</th><th></th></tr></thead>
 				<tbody>
 				{{range $d.Sources}}<tr>
-					<td data-label="{{$.T "ops64.col.host"}}"><span class="fw-semibold">{{.Host}}</span>{{if ne .Host .Name}} <span class="font-monospace text-body-secondary">{{.Name}}</span>{{end}}{{if .Collector}}<br><span class="text-body-secondary">{{$.T "ops64.sources.collector" "name" .Collector}}{{if .Timezone}} · {{.Timezone}}{{end}}</span>{{end}}{{range .Notes}}<br><span class="text-warning-emphasis"><i class="bi bi-exclamation-triangle"></i> {{.}}</span>{{end}}</td>
+					<td data-label="{{$.T "ops64.col.host"}}"><span class="fw-semibold">{{.Host}}</span>{{if ne .Host .Name}} <span class="font-monospace text-body-secondary">{{.Name}}</span>{{end}}{{if .API}}<br><span class="text-body-secondary">{{$.T "ops64.sources.via_api"}}{{if .Timezone}} · {{.Timezone}}{{end}}</span>{{else if .Collector}}<br><span class="text-body-secondary">{{$.T "ops64.sources.collector" "name" .Collector}}{{if .Timezone}} · {{.Timezone}}{{end}}</span>{{end}}{{range .Notes}}<br><span class="text-warning-emphasis"><i class="bi bi-exclamation-triangle"></i> {{.}}</span>{{end}}</td>
 					<td data-label="{{$.T "ops64.sources.jobs"}}">{{.Jobs}}</td>
 					<td data-label="{{$.T "ops64.sources.updated"}}" class="text-nowrap">{{$.Ago .Updated}}{{if .Stale}} <span class="badge text-bg-warning">{{$.T "ops64.sources.stale"}}</span>{{end}}</td>
 					<td class="text-end"><form method="post" action="/ops64/source/delete" class="d-inline"><input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="name" value="{{.Name}}"><button class="btn btn-sm btn-outline-danger" type="submit" data-confirm="{{$.T "ops64.sources.delete_confirm" "name" .Host}}" title="{{$.T "common.delete"}}" aria-label="{{$.T "common.delete"}}"><i class="bi bi-trash"></i></button></form></td>
@@ -259,6 +252,31 @@ node64-ops             # {{.T "ops64.guide.test_send"}}</code></pre></li>
 				</tbody>
 			</table></div>{{else}}<div class="card-body small text-body-secondary" id="ops-sources-empty">{{.T "ops64.sources.empty"}}</div>{{end}}
 			<div class="card-footer small text-body-secondary">{{.T "ops64.sources.hint"}}</div>
+		</div>
+	</div>
+	<div class="col-12">
+		<div class="card" id="ops-api">
+			<div class="card-header d-flex flex-wrap align-items-center gap-2"><i class="bi bi-cloud-download text-primary"></i> <span class="me-auto">{{.T "ops64.api.title"}}</span>
+				{{if $d.APIOn}}<span class="badge ops-badge-ok">{{.T "common.on"}}</span>{{else}}<span class="badge ops-badge-off">{{.T "common.off"}}</span>{{end}}
+				<form method="post" action="/ops64/api" class="d-flex gap-2" id="ops-api-form"><input type="hidden" name="_csrf" value="{{.CSRF}}">
+					{{if $d.APIOn}}<button class="btn btn-sm btn-outline-secondary" type="submit" name="action" value="poll" id="ops-api-poll"><i class="bi bi-arrow-repeat"></i> {{.T "ops64.api.poll"}}</button>
+					<button class="btn btn-sm btn-outline-secondary" type="submit" name="action" value="off" id="ops-api-off">{{.T "ops64.api.turn_off"}}</button>
+					{{else}}<button class="btn btn-sm btn-primary" type="submit" name="action" value="on" id="ops-api-on"{{if not $d.APIList}} disabled{{end}}>{{.T "ops64.api.turn_on"}}</button>{{end}}
+				</form>
+			</div>
+			<div class="card-body small pb-2"><p class="mb-0">{{.T "ops64.api.intro"}}</p></div>
+			{{if $d.APIList}}<div class="table-responsive"><table class="table table-sm mb-0 small table-stack align-middle" id="ops-api-table">
+				<thead><tr><th>{{.T "ops64.col.host"}}</th><th>{{.T "ops64.api.system"}}</th><th>{{.T "ops64.api.last"}}</th><th>{{.T "ops64.col.state"}}</th></tr></thead>
+				<tbody>
+				{{range $d.APIList}}<tr>
+					<td data-label="{{$.T "ops64.col.host"}}"><span class="fw-semibold">{{.Host}}</span></td>
+					<td data-label="{{$.T "ops64.api.system"}}">{{if eq .Kind "pbs"}}Proxmox Backup Server{{else}}Proxmox VE{{end}}</td>
+					<td data-label="{{$.T "ops64.api.last"}}" class="text-nowrap">{{if .At.IsZero}}<span class="text-body-tertiary">–</span>{{else}}{{$.Ago .At}}{{end}}</td>
+					<td data-label="{{$.T "ops64.col.state"}}">{{if .At.IsZero}}<span class="text-body-secondary">{{if $d.APIOn}}{{$.T "ops64.api.pending"}}{{else}}{{$.T "ops64.api.not_polled"}}{{end}}</span>{{else if .Err}}<span class="text-danger"><i class="bi bi-exclamation-triangle"></i> {{.Err}}</span>{{else}}<span class="badge ops-badge-ok">{{$.T "ops64.api.ok" "n" .Jobs}}</span>{{end}}</td>
+				</tr>{{end}}
+				</tbody>
+			</table></div>{{else}}<div class="card-body small text-body-secondary pt-0" id="ops-api-none">{{if $d.APIM64}}{{.T "ops64.api.none"}}{{else}}{{.T "ops64.api.m64_off"}}{{end}} <a href="/monitor64">Monitor64</a></div>{{end}}
+			<div class="card-footer small text-body-secondary">{{.T "ops64.api.hint"}}</div>
 		</div>
 	</div>
 </div>

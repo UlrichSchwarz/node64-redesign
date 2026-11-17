@@ -4,27 +4,59 @@ OPS64 ist das Node64-Modul für geplante Aufgaben im Heimnetz: Backups, Cronjobs
 Zeitplan – mit Zuständen, Überschneidungen und Meldungen. Entwurf und Umsetzung kommen aus der Community
 (UlrichSchwarz).
 
-OPS64 **liest nur mit**. Es startet, stoppt und sperrt nichts auf den Hosts.
+OPS64 **liest nur mit**. Es startet, stoppt und sperrt nichts auf den Hosts; über die Proxmox-API schickt es
+ausschließlich lesende Abfragen.
 
-## Einschalten und Hosts einbinden
+## Einschalten
 
-1. *Einstellungen → Module → OPS64* einschalten (Standard aus; aus heißt: kein Menüpunkt, keine Hintergrundarbeit,
-   Meldungen der Hosts werden mit 404 abgewiesen).
-2. Unter *API* einen API-Key anlegen.
-3. Auf jedem Host den Sammler einrichten (*OPS64 → Host einbinden* zeigt die Befehle mit der Adresse der Node):
+*Einstellungen → Module → OPS64* einschalten (Standard aus; aus heißt: kein Menüpunkt, keine Hintergrundarbeit,
+Meldungen der Hosts werden mit 404 abgewiesen). Danach gibt es zwei Wege, die sich ergänzen:
+
+| | Proxmox-API | Sammler auf dem Host |
+|---|---|---|
+| Backups (Proxmox VE, PBS) | ja | ja |
+| Cronjobs, systemd-Timer | nein (kennt die API nicht) | ja |
+| Auf dem Host nötig | nichts | Skript, Einstellungen, cron-Eintrag |
+| Richtung | Node fragt die Hosts | Hosts melden an die Node |
+
+## Backups über die Proxmox-API
+
+1. In **Monitor64** den Host mit API-Zugang anlegen (Proxmox VE bzw. Proxmox Backup Server; Token mit Rolle
+   `PVEAuditor` bzw. `Audit`, also nur lesend). Monitor64 muss eingeschaltet sein.
+2. Unter *OPS64 → Backups über die Proxmox-API* einschalten.
+
+Die Node liest dann alle 5 Minuten, ausschließlich mit lesenden Abfragen (GET):
+
+- Proxmox VE: `/cluster/backup` (Backup-Jobs), `/nodes/{node}/tasks?typefilter=vzdump` (Läufe, auch Backups von
+  Hand), `/nodes/{node}/time` (Zeitzone); ohne festen Node-Namen vorher `/cluster/status`.
+- Proxmox Backup Server: `/admin/sync`, `/admin/verify`, `/admin/prune`, `/admin/gc` (Jobs mit letztem Lauf),
+  `/nodes/localhost/tasks` (Verlauf), `/nodes/localhost/time`.
+
+Jeder Zugang erscheint als eigener Host. Die Karte zeigt je Zugang den letzten Abruf und einen Fehler im Klartext
+(z. B. fehlendes Recht). Fehlt nur ein Teil (etwa die Aufgabenliste), steht ein Hinweis beim Host. Nach dem
+Ausschalten bleiben die gelesenen Hosts stehen, bis man sie entfernt; eine Meldung „Host stumm“ gibt es dann nicht.
+
+Der Abruf ist gegen nachgestellte Antworten getestet, noch nicht gegen viele echte Installationen.
+
+## Hosts einbinden (Cronjobs, Timer)
+
+1. Unter *API* einen API-Key anlegen.
+2. In der Shell des Hosts als root eine Zeile ausführen (*OPS64 → Host einbinden* zeigt sie mit der Adresse der
+   Node; vorne den API-Key einsetzen):
 
    ```bash
-   curl -fsS -H "Authorization: Bearer $KEY" -o /usr/local/bin/node64-ops https://NODE/api/ops64/collector/linux.py
-   chmod 755 /usr/local/bin/node64-ops
-   printf 'url = https://NODE\nkey = %s\n' "$KEY" > /etc/node64-ops.conf && chmod 600 /etc/node64-ops.conf
-   node64-ops --dry-run     # zeigt, was gemeldet würde
-   node64-ops               # meldet einmal
-   echo '*/5 * * * * root /usr/local/bin/node64-ops' > /etc/cron.d/node64-ops
+   KEY='node64_…'; U='https://NODE'; curl -fsS -H "Authorization: Bearer $KEY" -o /usr/local/bin/node64-ops "$U/api/ops64/collector/linux.py" && chmod 755 /usr/local/bin/node64-ops && printf 'url = %s\nkey = %s\n' "$U" "$KEY" > /etc/node64-ops.conf && chmod 600 /etc/node64-ops.conf && echo '*/5 * * * * root /usr/local/bin/node64-ops' > /etc/cron.d/node64-ops && /usr/local/bin/node64-ops && echo "OPS64: ok"
    ```
+
+   Die Zeile legt drei Dateien an (Skript, Einstellungen, cron-Eintrag) und meldet einmal. Ist der Abruf über die
+   API eingeschaltet, enthält sie zusätzlich `skip = pve,pbs`: Der Sammler meldet dann nur Cronjobs und Timer, damit
+   die Backups nicht doppelt im Zeitplan stehen.
+3. Ansehen, was gemeldet wird (sendet nichts): `node64-ops --dry-run`
+4. Entfernen: `rm -f /etc/cron.d/node64-ops /etc/node64-ops.conf /usr/local/bin/node64-ops`
 
 Der Sammler braucht Python 3.7 oder neuer und keine Zusatzpakete. Einstellungen in `/etc/node64-ops.conf`:
 `url`, `key`, `name` (Kennung, Standard Hostname), `label` (Anzeigename), `insecure = yes` (selbst signiertes
-Zertifikat der Node), `skip = pve,pbs,timers,cron` (Bereiche auslassen).
+Zertifikat der Node; bei curl dann `-k`), `skip = pve,pbs,timers,cron` (Bereiche auslassen).
 
 ## Was der Sammler liest
 
@@ -80,6 +112,7 @@ Nach dem Einbinden eines Hosts wird nur verschickt, was höchstens 2 Stunden alt
 
 `/api/ops64/…` (Beschreibung unter *API* in der Node):
 
+- `GET /api/ops64/collector/linux.py` – das Sammler-Skript (mit API-Key ladbar)
 - `PUT /api/ops64/sources/{name}` – Meldung eines Hosts (alle Aufgaben, bekannte Läufe). Eigene Sammler für andere
   Systeme können dieselbe Schnittstelle nutzen.
 - `GET /api/ops64/sources`, `DELETE /api/ops64/sources/{name}`
