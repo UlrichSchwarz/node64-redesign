@@ -1,5 +1,15 @@
 # OPS64 – Changes
 
+## 0.2.0 – unreleased
+
+New:
+
+- Backups via the Proxmox API (off by default, switch on the page): the node reads backup jobs and their runs itself from Proxmox VE (`/cluster/backup`, tasks of type `vzdump`) and Proxmox Backup Server (sync, verify and prune jobs, garbage collection) – using the accesses from Monitor64, read-only, every 5 minutes. Nothing needs to be installed on the hosts. Card with state and error per access, "Poll now".
+- Add a host with one line for the host's shell (download script, settings, cron, first report); plus the line to remove it. With API polling on, the collector only reports cron jobs and timers (`skip = pve,pbs`).
+- The collector script can be downloaded with the API key (`GET /api/ops64/collector/linux.py`).
+
+OPS64 still only reads: it changes nothing on the hosts and sends read requests only via the API.
+
 ## 0.1.0 – unreleased
 
 New (design and implementation from the community, UlrichSchwarz):

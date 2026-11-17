@@ -379,7 +379,8 @@ Das Modul *OPS64* (in den Einstellungen einschalten, standardmäßig aus) zeigt 
 - **Zeitplan** für Tag, Woche und Monat: Backups, Cronjobs und Timer mit Start, Dauer, Host und Ziel; Zustände geplant, laufend, erfolgreich, fehlgeschlagen, überfällig.
 - **Überschneidungen:** Aufgaben, die gleichzeitig laufen, über alle Hosts; Hinweis bei unklarer Laufzeit.
 - **Meldungen** über die Benachrichtigungskanäle der Node: Fehler, überfällige Aufgaben, ungewöhnlich lange Läufe, Host meldet sich nicht mehr.
-- **Hosts** melden über einen kleinen Sammler (Python 3, per cron): Proxmox VE, Proxmox Backup Server, systemd-Timer, crontabs. OPS64 liest nur mit und ändert nichts an den Hosts. API `/api/ops64/*`.
+- **Backups über die Proxmox-API** (optional): Backup-Jobs und Läufe von Proxmox VE und Proxmox Backup Server mit den Zugängen aus Monitor64, ohne Installation auf den Hosts.
+- **Cronjobs und Timer** meldet ein kleiner Sammler auf dem Host (Python 3, per cron, eine Zeile zum Einrichten); er kann auch die Backups melden. OPS64 liest nur mit und ändert nichts an den Hosts. API `/api/ops64/*`.
 
 Einzelheiten: [docs/OPS64.md](docs/OPS64.md). Entwurf und Umsetzung aus der Community (UlrichSchwarz).
 

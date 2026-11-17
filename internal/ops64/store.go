@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/ipv64net/node64/internal/store"
@@ -74,6 +75,9 @@ func (s Source) Host() string {
 	}
 	return s.Name
 }
+
+// API: die Node liest diesen Host selbst ueber die Proxmox-API (kein Sammler).
+func (s Source) API() bool { return strings.HasPrefix(s.Collector, apiPrefix) }
 
 // Location ist die Zeitzone des Hosts (unbekannt: die der Node).
 func (s Source) Location() *time.Location {

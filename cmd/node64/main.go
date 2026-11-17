@@ -347,6 +347,21 @@ func run() error {
 	// OPS64 (standardmaessig aus): Zeitplan der Backups, Cronjobs und Timer, die die Hosts ueber die API melden
 	opsModule := ops64.New(st, logger.Slog())
 	opsModule.SetNotifier(dispatcher.Dispatch) // Fehler, ueberfaellige Aufgaben, lange Laeufe, gleichzeitige Aufgaben
+	// Backup-Jobs auf Wunsch ueber die API: Zugaenge zu Proxmox VE und PBS aus Monitor64 (nur solange es laeuft)
+	opsModule.SetAPIAccesses(func(ctx context.Context) ([]ops64.APIAccess, bool) {
+		if !modules.IsRunning(monitor64.Name) {
+			return nil, false
+		}
+		list, err := m64Module.ProxmoxAccesses(ctx)
+		if err != nil {
+			return nil, true
+		}
+		out := make([]ops64.APIAccess, 0, len(list))
+		for _, a := range list {
+			out = append(out, ops64.APIAccess{UID: a.UID, Host: a.Host, Node: a.Node, System: a.System})
+		}
+		return out, true
+	})
 	modules.Register(opsModule)
 	// Verknuepfung mit ipv64.net (Sync-Client); standalone bleibt alles wie gehabt
 	syncClient := nodesync.New(nodesync.Deps{Core: st, HC: hcModule, NF: nfStore, Box: box, Version: Version, Log: logger.Slog(), Senders: notify.Senders(Version), Modules: modules,

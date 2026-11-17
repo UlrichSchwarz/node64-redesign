@@ -1,5 +1,15 @@
 # OPS64 – Änderungen
 
+## 0.2.0 – unveröffentlicht
+
+Neu:
+
+- Backups über die Proxmox-API (Standard aus, Schalter auf der Seite): Die Node liest Backup-Jobs und ihre Läufe selbst von Proxmox VE (`/cluster/backup`, Aufgaben vom Typ `vzdump`) und Proxmox Backup Server (Sync-, Verify- und Prune-Jobs, Garbage Collection) – mit den Zugängen aus Monitor64, nur lesend, alle 5 Minuten. Auf den Hosts muss dafür nichts installiert sein. Karte mit Stand und Fehler je Zugang, „Jetzt abrufen“.
+- Host einbinden mit einer Zeile für die Shell des Hosts (Skript laden, Einstellungen, cron, erste Meldung); dazu die Zeile zum Entfernen. Ist der Abruf über die API eingeschaltet, meldet der Sammler nur Cronjobs und Timer (`skip = pve,pbs`).
+- Das Sammler-Skript lässt sich mit dem API-Key laden (`GET /api/ops64/collector/linux.py`).
+
+OPS64 liest weiterhin nur: Es ändert nichts an den Hosts und schickt über die API ausschließlich lesende Abfragen.
+
 ## 0.1.0 – unveröffentlicht
 
 Neu (Entwurf und Umsetzung aus der Community, UlrichSchwarz):

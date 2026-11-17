@@ -1951,6 +1951,7 @@
       "mcp": "AI (MCP)"
     },
     "actions": {
+      "ops64_api": "OPS64: polling via the Proxmox API switched",
       "ops64_source_new": "OPS64: host reported for the first time",
       "ops64_source_delete": "OPS64: host removed",
       "ops64_job_save": "OPS64: task settings saved",
@@ -5643,6 +5644,21 @@
     }
   },
   "ops64": {
+    "api": {
+      "title": "Backups via the Proxmox API",
+      "intro": "The node reads backup jobs and their runs itself from Proxmox VE and Proxmox Backup Server – using the accesses from Monitor64, read-only, every 5 minutes. Nothing needs to be installed on the hosts.",
+      "turn_on": "Turn on",
+      "turn_off": "Turn off",
+      "poll": "Poll now",
+      "system": "System",
+      "last": "Last poll",
+      "ok": "{n} backup jobs read",
+      "pending": "will be polled shortly",
+      "not_polled": "not polled",
+      "none": "No access to Proxmox VE or Proxmox Backup Server is set up in Monitor64. Add a host with API access there:",
+      "m64_off": "The accesses come from Monitor64, and Monitor64 is switched off. Turn it on and add a host with API access there:",
+      "hint": "The API only knows backup jobs. Cron jobs and timers come from the collector on the host; if it runs as well, set \"skip = pve\" or \"skip = pbs\" there, otherwise the backups appear twice in the schedule."
+    },
     "title": "OPS64",
     "intro": "Operations & maintenance: backups, cron jobs and timers of all hosts in one place – with schedule, overlaps and alerts.",
     "week": "Week {n}",
@@ -5808,6 +5824,7 @@
       "jobs": "Tasks",
       "updated": "Last report",
       "stale": "not reporting",
+      "via_api": "read via the Proxmox API",
       "collector": "collector {name}",
       "delete_confirm": "Remove host {name} with all its tasks and runs?",
       "empty": "No host reports tasks yet.",
@@ -5815,18 +5832,17 @@
     },
     "guide": {
       "button": "Add host",
-      "title": "Add a host",
-      "intro": "A small script (Python 3, no extra packages) runs on every host via cron and reports backup jobs, cron jobs and timers with their runs to this node.",
-      "step_key": "Create an API key and set it as KEY on the host (KEY=node64_…):",
+      "title": "Add a host (cron jobs, timers, backups)",
+      "intro": "A small script (Python 3, no extra packages) runs on the host via cron and reports cron jobs, timers and backup jobs with their runs to this node. It only reads and changes nothing on the host.",
+      "step_key": "Create an API key:",
       "step_key_link": "API",
-      "step_load": "Download the script to the host (as root):",
-      "step_conf": "Enter the node address and the API key. The host name is used as name; set it with \"name = …\" if needed.",
-      "step_test": "Test:",
-      "test_dry": "shows what would be reported",
-      "test_send": "reports once",
-      "step_cron": "Report every 5 minutes:",
-      "reads": "It reads: backup jobs and backup runs of Proxmox VE (pvesh), jobs of Proxmox Backup Server (proxmox-backup-manager), systemd timers with their last run and all crontabs. Passwords and tokens in command lines are masked before sending.",
-      "readonly": "The script changes nothing on the host.",
+      "step_one": "Run this one line in the host's shell (as root) – put the API key in at the front:",
+      "one_writes": "The line creates three files (/usr/local/bin/node64-ops, /etc/node64-ops.conf, /etc/cron.d/node64-ops) and reports once; after that cron reports every 5 minutes.",
+      "one_skip": "Backups come via the Proxmox API here. So the collector only reports cron jobs and timers (skip = pve,pbs).",
+      "step_check": "See what is reported (sends nothing):",
+      "step_remove": "Remove again:",
+      "tls_hint": "Node with a self-signed certificate: add \"-k\" to curl and put \"insecure = yes\" into /etc/node64-ops.conf.",
+      "reads": "It reads: all crontabs, systemd timers with their last run and – unless skipped – backup jobs and backup runs of Proxmox VE (pvesh) and Proxmox Backup Server (proxmox-backup-manager). Passwords and tokens in command lines are masked before sending.",
       "download": "Download collector (Linux, Proxmox)",
       "api": "Other systems report via the API (PUT /api/ops64/sources/<name>)."
     },
@@ -5836,6 +5852,9 @@
       "overdue": "Overdue"
     },
     "flash": {
+      "api_on": "Polling via the Proxmox API turned on.",
+      "api_off": "Polling via the Proxmox API turned off. The hosts read so far stay until you remove them.",
+      "api_polled": "Polled.",
       "job_saved": "Task saved.",
       "notify_saved": "Notifications saved.",
       "source_deleted": "Host removed."

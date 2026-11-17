@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -24,6 +25,7 @@ import (
 	"github.com/ipv64net/node64/internal/logging"
 	"github.com/ipv64net/node64/internal/module"
 	"github.com/ipv64net/node64/internal/notify"
+	"github.com/ipv64net/node64/internal/proxmox"
 	"github.com/ipv64net/node64/internal/store"
 	nodesync "github.com/ipv64net/node64/internal/sync"
 	"github.com/ipv64net/node64/internal/web"
@@ -591,5 +593,207 @@ func TestPagesRender(t *testing.T) {
 	}
 	if _, body = get("/ops64"); !strings.Contains(body, `id="ops-sources-empty"`) {
 		t.Fatal("source still listed")
+	}
+	// Einzeiler fuer die Shell des Hosts; Abruf ueber die Proxmox-API: ohne Monitor64 nicht einschaltbar
+	if !strings.Contains(body, `id="ops-oneliner"`) || !strings.Contains(body, srv.URL) || !strings.Contains(body, "$U/api/ops64/collector/linux.py") || strings.Contains(body, "skip = pve,pbs") ||
+		!strings.Contains(body, `id="ops-api-none"`) || !strings.Contains(body, `id="ops-api-on" disabled`) {
+		t.Fatalf("guide and api card\n%s", body)
+	}
+	api := &fakeAPI{data: map[string]string{
+		"/cluster/backup": `[{"id":"backup-0001","schedule":"01:00","storage":"pbs-standort-b","all":1,"comment":"Backup VMs"}]`,
+		"/nodes/pve-01/tasks?typefilter=vzdump&source=all&limit=200": `[]`,
+	}}
+	m.newGetter = func(proxmox.System) (getter, error) { return api, nil }
+	m.SetAPIAccesses(func(context.Context) ([]APIAccess, bool) {
+		return []APIAccess{{UID: "u1", Host: "pve-01", Node: "pve-01", System: proxmox.System{Kind: proxmox.KindPVE}}}, true
+	})
+	if _, body = get("/ops64"); !strings.Contains(body, `id="ops-api-table"`) || strings.Contains(body, `id="ops-api-on" disabled`) || untranslated(body) {
+		t.Fatalf("api card with access\n%s", body)
+	}
+	if code, _ = post("/ops64/api", url.Values{"action": {"on"}}); code != http.StatusSeeOther || !m.APIOn(context.Background()) {
+		t.Fatalf("api on: %d", code)
+	}
+	if _, body = get("/ops64"); !strings.Contains(body, "1 Backup-Jobs gelesen") || !strings.Contains(body, "Abruf über die Proxmox-API") || !strings.Contains(body, "skip = pve,pbs") ||
+		!strings.Contains(body, `id="ops-api-poll"`) || !strings.Contains(body, "Backup VMs") || untranslated(body) {
+		t.Fatalf("api polled\n%s", body)
+	}
+	for _, p := range api.seen { // nur lesende Abfragen, keine Geheimnisse in der Seite
+		if !strings.HasPrefix(p, "/cluster/") && !strings.HasPrefix(p, "/nodes/") {
+			t.Fatalf("unexpected api path %s", p)
+		}
+	}
+	delete(api.data, "/cluster/backup")
+	if code, _ = post("/ops64/api", url.Values{"action": {"poll"}}); code != http.StatusSeeOther {
+		t.Fatalf("api poll: %d", code)
+	}
+	if _, body = get("/ops64"); !strings.Contains(body, "permission denied") {
+		t.Fatalf("api error not shown\n%s", body)
+	}
+	if code, _ = post("/ops64/api", url.Values{"action": {"off"}}); code != http.StatusSeeOther || m.APIOn(context.Background()) {
+		t.Fatalf("api off: %d", code)
+	}
+}
+
+// fakeAPI spielt die Proxmox-API: Antworten je Pfad (JSON des Feldes "data"), fehlende Pfade sind ein Fehler.
+type fakeAPI struct {
+	data map[string]string
+	seen []string
+}
+
+func (f *fakeAPI) Get(_ context.Context, path string, v any) error {
+	f.seen = append(f.seen, path)
+	raw, ok := f.data[path]
+	if !ok {
+		return &proxmox.Error{Kind: proxmox.ErrPermission, Status: 403, Detail: "permission check failed"}
+	}
+	return json.Unmarshal([]byte(raw), v)
+}
+
+// TestAPIPoll: Backup-Jobs und Laeufe ueber die API von Proxmox VE und Proxmox Backup Server (nachgestellte Antworten).
+func TestAPIPoll(t *testing.T) {
+	m, now, _ := modTest(t)
+	ctx := context.Background()
+	ts := func(s string) string { return strconv.FormatInt(at(t, s).Unix(), 10) }
+	hex := func(s string) string { return strings.ToUpper(strconv.FormatInt(at(t, s).Unix(), 16)) }
+	pve := &fakeAPI{data: map[string]string{
+		"/cluster/status": `[{"type":"cluster","name":"lab","quorate":1},{"type":"node","name":"pve-02","local":0},{"type":"node","name":"pve-01","local":1}]`,
+		"/cluster/backup": `[{"id":"backup-0001","schedule":"01:00","storage":"pbs-standort-b","all":1,"enabled":1,"mode":"snapshot","comment":"Backup VMs"},
+			{"id":"backup-0002","schedule":"sat 03:30","storage":"local","vmid":"101,102","enabled":"0"},
+			{"id":"backup-0003","schedule":"02:00","storage":"local","all":1,"node":"pve-02"},
+			{"id":"backup-0004","starttime":"04:15","dow":"mon,wed","storage":"local","pool":"prod"}]`,
+		"/nodes/pve-01/tasks?typefilter=vzdump&source=all&limit=200": `[
+			{"upid":"UPID:pve-01:1","starttime":` + ts("2026-11-18 01:00") + `,"endtime":` + ts("2026-11-18 02:10") + `,"status":"OK","id":""},
+			{"upid":"UPID:pve-01:2","starttime":"` + ts("2026-11-17 01:00") + `","endtime":` + ts("2026-11-17 01:05") + `,"status":"job errors"},
+			{"upid":"UPID:pve-01:3","starttime":` + ts("2026-11-18 10:10") + `,"id":104}]`,
+		"/nodes/pve-01/time": `{"timezone":"Europe/Berlin","time":1,"localtime":1}`,
+	}}
+	pbsUPID := func(start, typ, wid string) string {
+		return "UPID:pbs:00000A:00000B:00000001:" + hex(start) + ":" + typ + ":" + wid + ":root@pam:"
+	}
+	pbs := &fakeAPI{data: map[string]string{
+		"/admin/sync": `[{"id":"s-1","store":"tank","remote":"standort-a","remote-store":"main","schedule":"03:30","comment":"Offsite-Sync",
+			"last-run-upid":"` + pbsUPID("2026-11-18 03:30", "syncjob", "standort-a:main:tank::s-1") + `","last-run-state":"OK","last-run-endtime":` + ts("2026-11-18 04:58") + `}]`,
+		"/admin/verify": `[{"id":"v-1","store":"tank","schedule":"sat 10:00","last-run-upid":"` + pbsUPID("2026-11-18 10:00", "verificationjob", "tank:v-1") + `"}]`,
+		"/admin/gc":     `[{"store":"tank","schedule":"daily","last-run-upid":"` + pbsUPID("2026-11-18 00:00", "garbage_collection", "tank") + `","last-run-state":"WARNINGS: 2","last-run-endtime":` + ts("2026-11-18 00:20") + `}]`,
+		"/nodes/localhost/tasks?limit=300": `[
+			{"upid":"` + pbsUPID("2026-11-18 03:30", "syncjob", "standort-a:main:tank::s-1") + `","worker_type":"syncjob","worker_id":"standort-a:main:tank::s-1","starttime":` + ts("2026-11-18 03:30") + `,"endtime":` + ts("2026-11-18 04:58") + `,"status":"OK"},
+			{"upid":"` + pbsUPID("2026-11-17 03:30", "syncjob", "standort-a:main:tank::s-1") + `","worker_type":"syncjob","worker_id":"standort-a:main:tank::s-1","starttime":` + ts("2026-11-17 03:30") + `,"endtime":` + ts("2026-11-17 03:31") + `,"status":"connection error"},
+			{"upid":"x","worker_type":"backup","worker_id":"tank:vm/100","starttime":` + ts("2026-11-18 01:00") + `,"endtime":` + ts("2026-11-18 01:10") + `,"status":"OK"}]`,
+		"/nodes/localhost/time": `{"timezone":"Europe/Berlin"}`,
+	}}
+	bad := &fakeAPI{data: map[string]string{}}
+	clients := map[string]*fakeAPI{"https://pve": pve, "https://pbs": pbs, "https://bad": bad}
+	m.newGetter = func(sys proxmox.System) (getter, error) { return clients[sys.Addresses[0]], nil }
+	m64 := true
+	acc := []APIAccess{
+		{UID: "A1-b2", Host: "pve-01", System: proxmox.System{Kind: proxmox.KindPVE, Addresses: []string{"https://pve"}}},
+		{UID: "c3d4", Host: "Standort B", System: proxmox.System{Kind: proxmox.KindPBS, Addresses: []string{"https://pbs"}}},
+		{UID: "e5f6", Host: "kaputt", System: proxmox.System{Kind: proxmox.KindPVE, Addresses: []string{"https://bad"}}},
+	}
+	m.SetAPIAccesses(func(context.Context) ([]APIAccess, bool) { return acc, m64 })
+	if m.APIOn(ctx) {
+		t.Fatal("api on by default")
+	}
+	if st, ok := m.APIStates(ctx); !ok || len(st) != 3 || !st[0].At.IsZero() || st[2].Source != "api-pve-a1b2" {
+		t.Fatalf("states before: %+v", st)
+	}
+	m.PollAPI(ctx)
+	st, _ := m.APIStates(ctx)
+	byHost := map[string]APIState{}
+	for _, s := range st {
+		byHost[s.Host] = s
+	}
+	if s := byHost["pve-01"]; s.Err != "" || s.Jobs != 3 || s.At.IsZero() {
+		t.Fatalf("pve state: %+v", s)
+	}
+	if s := byHost["Standort B"]; s.Err != "" || s.Jobs != 3 {
+		t.Fatalf("pbs state: %+v", s)
+	}
+	if s := byHost["kaputt"]; s.Err == "" || !strings.Contains(s.Err, "403") {
+		t.Fatalf("bad state: %+v", s)
+	}
+	day := at(t, "2026-11-18 00:00")
+	p, err := m.Plan(ctx, day, day.AddDate(0, 0, 1))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.Sources) != 2 {
+		t.Fatalf("sources: %+v", p.Sources)
+	}
+	for _, s := range p.Sources {
+		if !s.API() || s.Timezone != "Europe/Berlin" || len(s.Notes) != 0 && s.Host() == "pve-01" {
+			t.Fatalf("source: %+v", s)
+		}
+		if s.Host() == "Standort B" && (len(s.Notes) != 1 || !strings.HasPrefix(s.Notes[0], "admin/prune: ")) { // Teilfehler als Hinweis
+			t.Fatalf("pbs notes: %+v", s.Notes)
+		}
+	}
+	// Proxmox VE: Job der Node, Lauf zugeordnet; Job von pve-02 fehlt; alte Schreibweise mit dow; abgeschaltet
+	b := jobByName(p, "Backup VMs")
+	if b == nil || b.Source != "api-pve-a1b2" || len(b.Items) != 1 || b.Items[0].Status != StOK || b.Items[0].End.Sub(b.Items[0].Start) != 70*time.Minute ||
+		b.Command != "vzdump --all --storage pbs-standort-b --mode snapshot" {
+		t.Fatalf("pve job: %+v", b)
+	}
+	if j := jobByName(p, "vzdump 101,102"); j == nil || j.Enabled {
+		t.Fatalf("disabled job: %+v", j)
+	}
+	if j := jobByName(p, "vzdump --pool prod"); j == nil || j.Schedule != "mon,wed 04:15" || len(j.Items) != 1 || !j.Items[0].Planned.Equal(at(t, "2026-11-18 04:15")) {
+		t.Fatalf("legacy schedule: %+v", j)
+	}
+	for _, j := range p.Jobs {
+		if strings.Contains(j.ID, "backup-0003") {
+			t.Fatal("job of another node")
+		}
+	}
+	if len(p.Extra) != 1 || p.Extra[0].Name != "vzdump 104" || p.Extra[0].Status != StRunning {
+		t.Fatalf("manual backup: %+v", p.Extra)
+	}
+	// PBS: Sync mit Verlauf aus der Aufgabenliste (kein doppelter Lauf), Verify laeuft, GC mit Warnungen = gelaufen
+	s := jobByName(p, "Offsite-Sync")
+	if s == nil || s.Target != "standort-a:main → tank" || len(s.Items) != 1 || s.Items[0].Status != StOK || s.Items[0].End.Sub(s.Items[0].Start) != 88*time.Minute {
+		t.Fatalf("sync: %+v", s)
+	}
+	if runs, _ := m.RunsOf(ctx, s.Source, s.ID, 10); len(runs) != 2 || runs[1].Status != RunFail || runs[1].Detail != "connection error" {
+		t.Fatalf("sync runs: %+v", runs)
+	}
+	if v := jobByName(p, "verify v-1"); v == nil || v.Last == nil || v.Last.Status != RunRunning || !v.Last.Start.Equal(at(t, "2026-11-18 10:00")) {
+		t.Fatalf("verify: %+v", v)
+	}
+	if g := jobByName(p, "garbage collection tank"); g == nil || len(g.Items) != 1 || g.Items[0].Status != StOK || g.Items[0].Run.Detail != "WARNINGS: 2" {
+		t.Fatalf("gc: %+v", g)
+	}
+	// abgeschaltet: ein stummer API-Host loest keine Meldung aus; eingeschaltet schon
+	var sent []notify.Alert
+	m.SetNotifier(func(a notify.Alert) { sent = append(sent, a) })
+	*now = now.Add(3 * time.Hour)
+	stale := func() int {
+		n := 0
+		list, err := m.findAlerts(ctx, *now)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, a := range list {
+			if a.Kind == AlertStale {
+				n++
+			}
+		}
+		return n
+	}
+	if n := stale(); n != 0 {
+		t.Fatalf("stale while off: %d", n)
+	}
+	if err := m.SetAPI(ctx, true); err != nil || !m.APIOn(ctx) {
+		t.Fatal("set api")
+	}
+	if n := stale(); n != 2 {
+		t.Fatalf("stale while on: %d", n)
+	}
+	// faellig erst wieder nach apiEvery
+	if !m.apiDue(*now) || m.apiDue(now.Add(time.Minute)) || !m.apiDue(now.Add(apiEvery)) {
+		t.Fatal("apiDue")
+	}
+	m64 = false
+	if _, ok := m.APIStates(ctx); ok {
+		t.Fatal("monitor64 off not reported")
 	}
 }

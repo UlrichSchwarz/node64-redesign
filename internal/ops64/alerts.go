@@ -135,7 +135,11 @@ func (m *Module) findAlerts(ctx context.Context, now time.Time) ([]Alert, error)
 		out = append(out, Alert{Key: key, Kind: AlertOverlap, At: now, Name: strings.Join(o.Names, ", "), Open: true,
 			Data: map[string]string{"jobs": strings.Join(o.Names, ", "), "time": stamp(o.Start) + "–" + o.End.In(time.Local).Format("15:04")}})
 	}
+	apiOn := m.APIOn(ctx)
 	for _, s := range p.Sources {
+		if s.API() && !apiOn { // Abruf ueber die API abgeschaltet: kein "meldet sich nicht"
+			continue
+		}
 		if s.Jobs > 0 && now.Sub(s.Updated) >= staleAlert {
 			out = append(out, Alert{Key: AlertStale + "|" + s.Name, Kind: AlertStale, At: now, Source: s.Name, Name: s.Host(), Open: true,
 				Data: map[string]string{"host": s.Host(), "since": stamp(s.Updated)}})

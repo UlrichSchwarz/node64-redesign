@@ -4,6 +4,7 @@ Short summary of what changes per version. Details per module are in the node un
 
 ## Unreleased
 
+- OPS64 0.2.0: backups can also be read without installing anything via the Proxmox API (Proxmox VE and Proxmox Backup Server, accesses from Monitor64, off by default); hosts for cron jobs and timers are added with a single line in the shell.
 - OPS64: new module for operations & maintenance (off by default) – backups, cron jobs and timers of all hosts in one schedule by day, week and month, with overlaps and alerts on failures, overdue tasks and unusually long runs. Hosts report through a small collector (Proxmox VE, Proxmox Backup Server, systemd timers, cron); OPS64 only reads.
 
 ## 1.7.8 – 2026-11-17

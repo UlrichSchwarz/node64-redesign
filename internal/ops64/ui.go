@@ -29,6 +29,7 @@ func (m *Module) uiRoutes(mux *http.ServeMux, g module.Guards) {
 	mux.Handle("POST /ops64/job", page(m.postJob))
 	mux.Handle("POST /ops64/notify", page(m.postNotify))
 	mux.Handle("POST /ops64/source/delete", page(m.postSourceDelete))
+	mux.Handle("POST /ops64/api", page(m.postAPI))
 	mux.Handle("GET /ops64/collector/linux.py", page(m.collectorLinux))
 }
 
@@ -257,6 +258,10 @@ type pageData struct {
 	Alerts      []alertRow
 	Notify      []notifyFlag
 	BaseURL     string
+
+	APIOn   bool       // Abruf ueber die Proxmox-API eingeschaltet
+	APIM64  bool       // Monitor64 laeuft (von dort kommen die Zugaenge)
+	APIList []APIState // Zugaenge mit dem Stand des letzten Abrufs
 }
 
 type notifyFlag struct {
@@ -389,6 +394,8 @@ func (m *Module) pageOverview(w http.ResponseWriter, r *http.Request) {
 	for _, k := range AlertKinds {
 		d.Notify = append(d.Notify, notifyFlag{k, m.NotifyOn(ctx, k)})
 	}
+	d.APIOn = m.APIOn(ctx)
+	d.APIList, d.APIM64 = m.APIStates(ctx)
 	m.g.Render(w, r, http.StatusOK, "ops64/overview", "ops64.title", d)
 }
 
@@ -798,4 +805,35 @@ func (m *Module) postSourceDelete(w http.ResponseWriter, r *http.Request) {
 		m.g.Flash(w, r, "success", m.g.T(r, "ops64.flash.source_deleted"))
 	}
 	http.Redirect(w, r, "/ops64#ops-sources", http.StatusSeeOther)
+}
+
+// postAPI schaltet den Abruf ueber die Proxmox-API (action on/off) bzw. fragt sofort ab (action poll).
+func (m *Module) postAPI(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	action := r.PostFormValue("action")
+	switch action {
+	case "on", "off":
+		if err := m.SetAPI(ctx, action == "on"); err != nil {
+			m.fail(w, r, err)
+			return
+		}
+		m.g.Audit(r, "ops64.api", Name, action)
+		m.g.Flash(w, r, "success", m.g.T(r, "ops64.flash.api_"+action))
+	case "poll":
+		if !m.APIOn(ctx) {
+			action = ""
+		}
+	default:
+		action = ""
+	}
+	if action == "on" || action == "poll" { // gleich abrufen, damit die Seite den Stand zeigt (begrenzt, der Rest folgt im Hintergrund)
+		c, cancel := context.WithTimeout(ctx, 30*time.Second)
+		m.apiDue(m.now())
+		m.PollAPI(c)
+		cancel()
+		if action == "poll" {
+			m.g.Flash(w, r, "success", m.g.T(r, "ops64.flash.api_polled"))
+		}
+	}
+	http.Redirect(w, r, "/ops64#ops-api", http.StatusSeeOther)
 }

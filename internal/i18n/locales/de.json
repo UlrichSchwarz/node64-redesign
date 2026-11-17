@@ -1951,6 +1951,7 @@
       "mcp": "KI (MCP)"
     },
     "actions": {
+      "ops64_api": "OPS64: Abruf über die Proxmox-API geschaltet",
       "ops64_source_new": "OPS64: Host meldet zum ersten Mal",
       "ops64_source_delete": "OPS64: Host entfernt",
       "ops64_job_save": "OPS64: Aufgabe eingestellt",
@@ -5643,6 +5644,21 @@
     }
   },
   "ops64": {
+    "api": {
+      "title": "Backups über die Proxmox-API",
+      "intro": "Die Node liest Backup-Jobs und ihre Läufe selbst von Proxmox VE und Proxmox Backup Server – mit den Zugängen aus Monitor64, nur lesend, alle 5 Minuten. Auf den Hosts muss dafür nichts installiert sein.",
+      "turn_on": "Einschalten",
+      "turn_off": "Ausschalten",
+      "poll": "Jetzt abrufen",
+      "system": "System",
+      "last": "Letzter Abruf",
+      "ok": "{n} Backup-Jobs gelesen",
+      "pending": "wird gleich abgerufen",
+      "not_polled": "nicht abgerufen",
+      "none": "In Monitor64 ist kein Zugang zu Proxmox VE oder Proxmox Backup Server eingerichtet. Dort einen Host mit API-Zugang anlegen:",
+      "m64_off": "Die Zugänge kommen aus Monitor64, und Monitor64 ist ausgeschaltet. Einschalten und dort einen Host mit API-Zugang anlegen:",
+      "hint": "Die API kennt nur Backup-Jobs. Cronjobs und Timer liefert der Sammler auf dem Host; läuft er zusätzlich, dort „skip = pve“ bzw. „skip = pbs“ setzen, sonst stehen die Backups doppelt im Zeitplan."
+    },
     "title": "OPS64",
     "intro": "Betrieb & Wartung: Backups, Cronjobs und Timer aller Hosts an einer Stelle – mit Zeitplan, Überschneidungen und Meldungen.",
     "week": "KW {n}",
@@ -5808,6 +5824,7 @@
       "jobs": "Aufgaben",
       "updated": "Letzte Meldung",
       "stale": "meldet sich nicht",
+      "via_api": "Abruf über die Proxmox-API",
       "collector": "Sammler {name}",
       "delete_confirm": "Host {name} mit allen Aufgaben und Läufen entfernen?",
       "empty": "Noch kein Host meldet Aufgaben.",
@@ -5815,18 +5832,17 @@
     },
     "guide": {
       "button": "Host einbinden",
-      "title": "Host einbinden",
-      "intro": "Auf jedem Host läuft ein kleines Skript (Python 3, ohne Zusatzpakete) per cron und meldet Backup-Jobs, Cronjobs und Timer samt Läufen an diese Node.",
-      "step_key": "API-Key anlegen und auf dem Host als KEY setzen (KEY=node64_…):",
+      "title": "Host einbinden (Cronjobs, Timer, Backups)",
+      "intro": "Auf dem Host läuft ein kleines Skript (Python 3, ohne Zusatzpakete) per cron und meldet Cronjobs, Timer und Backup-Jobs samt Läufen an diese Node. Es liest nur und ändert nichts am Host.",
+      "step_key": "API-Key anlegen:",
       "step_key_link": "API",
-      "step_load": "Skript auf den Host laden (als root):",
-      "step_conf": "Adresse der Node und API-Key eintragen. Als Name gilt der Hostname; mit „name = …“ lässt er sich festlegen.",
-      "step_test": "Testen:",
-      "test_dry": "zeigt, was gemeldet würde",
-      "test_send": "meldet einmal",
-      "step_cron": "Alle 5 Minuten melden:",
-      "reads": "Gelesen werden: Backup-Jobs und Backup-Läufe von Proxmox VE (pvesh), Jobs des Proxmox Backup Server (proxmox-backup-manager), systemd-Timer mit dem letzten Lauf und alle crontabs. Passwörter und Token in Befehlszeilen werden vor dem Senden unkenntlich gemacht.",
-      "readonly": "Das Skript ändert nichts am Host.",
+      "step_one": "In der Shell des Hosts (als root) diese eine Zeile ausführen – vorne den API-Key einsetzen:",
+      "one_writes": "Die Zeile legt drei Dateien an (/usr/local/bin/node64-ops, /etc/node64-ops.conf, /etc/cron.d/node64-ops) und meldet einmal; danach meldet cron alle 5 Minuten.",
+      "one_skip": "Die Backups kommen hier über die Proxmox-API. Der Sammler meldet deshalb nur Cronjobs und Timer (skip = pve,pbs).",
+      "step_check": "Ansehen, was gemeldet wird (sendet nichts):",
+      "step_remove": "Wieder entfernen:",
+      "tls_hint": "Node mit selbst signiertem Zertifikat: bei curl „-k“ ergänzen und in /etc/node64-ops.conf „insecure = yes“ eintragen.",
+      "reads": "Gelesen werden: alle crontabs, systemd-Timer mit dem letzten Lauf und – wenn nicht ausgelassen – Backup-Jobs und Backup-Läufe von Proxmox VE (pvesh) und Proxmox Backup Server (proxmox-backup-manager). Passwörter und Token in Befehlszeilen werden vor dem Senden unkenntlich gemacht.",
       "download": "Sammler herunterladen (Linux, Proxmox)",
       "api": "Andere Systeme melden über die API (PUT /api/ops64/sources/<name>)."
     },
@@ -5836,6 +5852,9 @@
       "overdue": "Überfällig"
     },
     "flash": {
+      "api_on": "Abruf über die Proxmox-API eingeschaltet.",
+      "api_off": "Abruf über die Proxmox-API ausgeschaltet. Die gelesenen Hosts bleiben, bis du sie entfernst.",
+      "api_polled": "Abgerufen.",
       "job_saved": "Aufgabe gespeichert.",
       "notify_saved": "Benachrichtigungen gespeichert.",
       "source_deleted": "Host entfernt."
